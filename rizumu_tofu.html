@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>〜豆腐づくりとはリズムである〜</title>
+    <style>
+        :root {
+            --bg-light: #fcfaf2;
+            --panel-white: #ffffff;
+            --tofu-beige: #e9d7a5;
+            --tofu-skin: #f5f0db;
+            --text-main: #4a4a4a;
+            --text-muted: #8c8c8c;
+            --border-color: #e0dbcd;
+            --tofu-border-dark: #b8b2a0;
+            --gold-fill: #e6b422;
+            --gold-border: #b8860b;
+        }
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-light); color: var(--text-main);
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+            overflow: hidden; user-select: none;
+        }
+        .screen {
+            display: none; width: 100vw; height: 100vh;
+            flex-direction: column; align-items: center; justify-content: center;
+            box-sizing: border-box; padding: 16px; position: fixed; top: 0; left: 0;
+        }
+        .screen.active { display: flex; }
+
+        /* 生成中画面 */
+        #loading-screen {
+            display: none; position: fixed; inset: 0;
+            background-color: rgba(252, 250, 242, 0.92);
+            z-index: 2000; padding: 0;
+            justify-content: flex-end; align-items: flex-end;
+        }
+        #loading-screen.active { display: flex; }
+        .loading-wrap {
+            display: flex; flex-direction: column; align-items: center;
+            margin-right: 40px; margin-bottom: 40px;
+        }
+        .loading-tofu {
+            width: 30px; height: 30px; background-color: #ffffff;
+            border: 2px solid var(--tofu-border-dark); border-radius: 4px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.05);
+            animation: tofu-bounce 0.5s infinite alternate ease-in-out;
+        }
+        @keyframes tofu-bounce {
+            0% { transform: translateY(0) scaleX(1) scaleY(1); }
+            85% { transform: translateY(-15px) scaleX(1) scaleY(1); }
+            100% { transform: translateY(-18px) scaleX(0.96) scaleY(1.04); }
+        }
+        .loading-text {
+            margin-top: 10px; font-weight: bold; letter-spacing: 2px;
+            color: var(--tofu-beige); font-size: 12px;
+        }
+
+        /* 1. 枠なしタイトル表示画面 */
+        #title-screen { cursor: pointer; }
+        .title-tofu-icon {
+            width: 64px; height: 64px; background: #ffffff;
+            border: 3px solid var(--tofu-border-dark); border-radius: 10px;
+            margin: 0 auto 24px auto; box-shadow: 0 8px 0 #e6e0d0;
+            animation: beat-bounce 0.48s infinite alternate ease-in-out;
+        }
+        @keyframes beat-bounce {
+            0% { transform: translateY(0) scaleX(1.06) scaleY(0.94); }
+            100% { transform: translateY(-16px) scaleX(0.96) scaleY(1.04); }
+        }
+        .main-title {
+            font-size: 34px; font-weight: bold; letter-spacing: 3px;
+            margin: 0 0 10px 0; color: var(--text-main);
+        }
+        .sub-title { font-size: 13px; color: var(--text-muted); letter-spacing: 4px; margin-bottom: 48px; }
+        .press-any-key {
+            font-size: 18px; font-weight: bold; letter-spacing: 2px;
+            color: #8c6d23; animation: blink-text 1.1s infinite alternate;
+        }
+        @keyframes blink-text {
+            0% { opacity: 0.25; }
+            100% { opacity: 1; }
+        }
+        /* 2. 選択画面（左にグリッド、右に詳細パネル） */
+        #select-screen {
+            flex-direction: row; justify-content: space-between; align-items: center;
+            padding: 30px 60px 30px 45px; gap: 30px;
+        }
+        .matrix-viewport {
+            flex: 1; height: 100%; overflow-x: auto;
+            display: flex; align-items: center;
+            padding: 20px 16px; box-sizing: border-box;
+            scrollbar-width: none;
+        }
+        .matrix-viewport::-webkit-scrollbar { display: none; }
+        .matrix-columns {
+            display: flex; gap: 22px; align-items: flex-end; width: max-content; margin: 0;
+        }
+        .chap-col {
+            display: flex; flex-direction: column-reverse; gap: 14px; align-items: center;
+            position: relative;
+        }
+        .sq-tile {
+            width: 74px; height: 74px; background: var(--panel-white);
+            border: 3px solid var(--tofu-border-dark); border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
+            position: relative; box-shadow: 0 5px 0 #d6d0c2;
+        }
+        .sq-tile.remix { border-radius: 16px; background: #fdf8e8; border-color: #bca465; }
+        .sq-tile.locked {
+            background: #3a3835; border-color: #262523; color: #6e6a63;
+            box-shadow: 0 4px 0 #262523; cursor: not-allowed;
+        }
+        .sq-tile.selected:not(.locked) {
+            transform: scale(1.12); z-index: 100;
+            border-color: #d4a017; box-shadow: 0 0 0 4px #fff3cd, 0 6px 0 #bca465;
+        }
+
+        /* 新ゲーム出現時の「輝きが徐々に収束する」アニメーション */
+        @keyframes tile-unlock-shine {
+            0% {
+                transform: scale(1.35);
+                box-shadow: 0 0 36px 16px #ffe066, 0 0 0 6px #ffffff;
+                filter: brightness(1.45);
+            }
+            40% {
+                transform: scale(1.18);
+                box-shadow: 0 0 24px 10px #ffd54f, 0 0 0 4px #fff8e1;
+                filter: brightness(1.2);
+            }
+            100% {
+                transform: scale(1.12);
+                box-shadow: 0 0 0 4px #fff3cd, 0 6px 0 #bca465;
+                filter: brightness(1);
+            }
+        }
+        .sq-tile.unlock-shine {
+            animation: tile-unlock-shine 1.35s ease-out forwards;
+        }
+
+        /* パーフェクト専用「P」メダル */
+        .p-medal {
+            position: absolute; top: -8px; left: -10px;
+            width: 24px; height: 24px; border-radius: 50%;
+            background-color: var(--gold-fill);
+            border: 2px solid var(--gold-border);
+            color: #ffffff; font-size: 13px; font-weight: 900;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        /* 右側：ゲーム説明・評価カード */
+        .game-info-panel {
+            width: 340px; min-width: 320px; height: 420px;
+            background: var(--panel-white);
+            border: 3px solid var(--tofu-border-dark);
+            border-radius: 18px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+            display: flex; flex-direction: column;
+            overflow: hidden; flex-shrink: 0;
+        }
+        .info-header {
+            background: var(--tofu-skin); padding: 18px 22px;
+            border-bottom: 2px solid var(--border-color);
+            font-size: 20px; font-weight: bold; letter-spacing: 1px; color: var(--text-main);
+        }
+        .info-desc {
+            flex: 1; padding: 22px; font-size: 15px; line-height: 1.75;
+            color: var(--text-main); white-space: pre-line;
+        }
+        .info-rank-box {
+            background: #faf7ee; border-top: 2px solid var(--border-color);
+            padding: 14px 22px; display: flex; justify-content: space-between; align-items: baseline;
+        }
+        .info-rank-label { font-size: 13px; font-weight: bold; color: var(--text-muted); }
+        .info-rank-val { font-size: 22px; font-weight: 900; color: #8c6d23; letter-spacing: 1px; }
+        .info-action-area { padding: 0 22px 20px 22px; background: #faf7ee; }
+        .btn-start-selected {
+            width: 100%; padding: 12px; background: var(--tofu-beige); border: 2px solid #cbb67c;
+            border-radius: 10px; font-size: 16px; font-weight: bold; color: var(--text-main);
+            cursor: pointer; box-shadow: 0 4px 0 #cbb67c; transition: 0.12s;
+        }
+        .btn-start-selected:hover { background: #ffffff; transform: translateY(-2px); }
+
+        #game-screen { padding: 16px; background: var(--bg-light); }
+        #rhythm-canvas {
+            width: 1080px; height: 608px; max-width: 96vw; max-height: 92vh;
+            background: #dfd8c5; border: 4px solid var(--tofu-border-dark);
+            border-radius: 18px; box-shadow: 0 10px 28px rgba(0,0,0,0.08); cursor: pointer;
+        }
+
+        .sidebar-trigger {
+            position: fixed; right: 15px; top: 15px; display: flex; flex-direction: column;
+            align-items: center; cursor: pointer; z-index: 110;
+        }
+        .sidebar-trigger-tofu {
+            width: 32px; height: 32px; background-color: #ffffff;
+            border: 2px solid var(--tofu-border-dark); border-radius: 4px;
+        }
+        .sidebar-trigger-text { font-size: 10px; font-weight: bold; color: var(--text-muted); margin-top: 4px; }
+        #sidebar {
+            width: 280px; height: 100vh; background: var(--panel-white);
+            border-left: 2px solid var(--border-color); position: fixed; right: -300px; top: 0;
+            transition: right 0.25s ease-in-out; z-index: 1500; padding: 24px 20px; box-sizing: border-box;
+            display: flex; flex-direction: column;
+        }
+        #sidebar.open { right: 0; }
+        .side-btn {
+            width: 100%; padding: 12px; margin-top: 12px; border-radius: 8px;
+            border: 2px solid #cbb67c; background: var(--tofu-beige);
+            font-weight: bold; cursor: pointer; font-size: 14px;
+        }
+        .side-btn:hover { background: #ffffff; }
+
+        .help-trigger-btn {
+            position: absolute; right: 20px; bottom: 20px;
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--bg-light); border: 2px solid var(--tofu-border-dark);
+            color: var(--text-main); font-size: 18px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.15s;
+        }
+        .help-trigger-btn:hover { background: var(--tofu-beige); }
+
+        #help-modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0, 0, 0, 0.45); z-index: 2500;
+            align-items: center; justify-content: center;
+        }
+        #help-modal.active { display: flex; }
+        .help-card {
+            background: var(--panel-white); border: 3px solid var(--tofu-border-dark);
+            border-radius: 16px; width: 420px; max-width: 90vw; padding: 26px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+        .help-list {
+            margin: 14px 0 20px 0; padding-left: 18px;
+            font-size: 14px; line-height: 1.9; color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+    <!-- 生成中画面 -->
+    <div id="loading-screen" class="screen">
+        <div class="loading-wrap">
+            <div class="loading-tofu"></div>
+            <div class="loading-text">生成中...</div>
+        </div>
+    </div>
+
+    <div class="sidebar-trigger" onclick="event.stopPropagation(); toggleSidebar()">
+        <div class="sidebar-trigger-tofu"></div>
+        <div class="sidebar-trigger-text">メニュー [M]</div>
+    </div>
+
+    <!-- 1. 枠なしタイトル表示画面 -->
+    <div id="title-screen" class="screen active" onclick="enterStageSelect()">
+        <div class="title-tofu-icon"></div>
+        <h1 class="main-title">〜豆腐づくりとはリズムである〜</h1>
+        <div class="sub-title">- RHYTHM OF TOFU MAKING -</div>
+        <div class="press-any-key">Press any key to start</div>
+    </div>
+
+    <!-- 2. 選択画面（左：グリッド / 右：説明・ランクカード） -->
+    <div id="select-screen" class="screen">
+        <div id="matrix-viewport" class="matrix-viewport">
+            <div id="matrix-columns" class="matrix-columns"></div>
+        </div>
+
+        <div class="game-info-panel">
+            <div id="info-title" class="info-header">豆腐工場</div>
+            <div id="info-desc" class="info-desc">手前から流れてくる豆腐を、\nT字の機械で奥のパックに乗せよう！</div>
+            <div class="info-rank-box">
+                <span class="info-rank-label">評価</span>
+                <span id="info-rank" class="info-rank-val">ー</span>
+            </div>
+            <div class="info-action-area">
+                <button class="btn-start-selected" onclick="startSelectedGame()">あそぶ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. ゲームプレイ＆黒背景リザルト画面（1280x720高精細Canvas） -->
+    <div id="game-screen" class="screen">
+        <canvas id="rhythm-canvas" width="1280" height="720"></canvas>
+    </div>
+
+    <!-- サイドバー -->
+    <div id="sidebar">
+        <div style="font-weight: bold; margin-bottom: 20px; cursor: pointer; color: var(--text-muted);" onclick="toggleSidebar(false)">閉じる [M]</div>
+        <h3 style="margin-top:0;">メニュー</h3>
+        <div style="margin-bottom:20px;">
+            <label style="font-size:12px; font-weight:bold;">BGM音量</label>
+            <input type="range" id="bgm-vol" min="0" max="100" value="75" style="width:100%; margin:6px 0 14px 0;" oninput="saveVol()">
+            <label style="font-size:12px; font-weight:bold;">効果音 (SE) 音量</label>
+            <input type="range" id="se-vol" min="0" max="100" value="85" style="width:100%; margin-top:6px;" oninput="saveVol()">
+        </div>
+        <button id="side-context-btn" class="side-btn" onclick="handleSideContextAction()">とうふ に戻る</button>
+        <button class="help-trigger-btn" title="操作方法を見る" onclick="toggleHelpModal(true)">?</button>
+    </div>
+
+    <!-- 操作方法モーダル -->
+    <div id="help-modal" onclick="toggleHelpModal(false)">
+        <div class="help-card" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 8px 0; border-bottom:2px solid var(--border-color); padding-bottom:8px;">操作方法</h3>
+            <ul class="help-list">
+                <li><strong>選択画面の移動</strong>：矢印キー（↑↓←→）または WASDキー</li>
+                <li><strong>ゲームの選択・決定</strong>：マスをクリック、または Enter / Spaceキー</li>
+                <li><strong>プレイ中のアクション</strong>：画面クリック / タップ、または Spaceキー</li>
+                <li><strong>練習のスキップ</strong>：練習中に Sキー、または右上の「S」をクリック</li>
+                <li><strong>メニューの開閉</strong>：Mキー、または右上の豆腐アイコン（タイトル・選択画面のみ）</li>
+            </ul>
+            <button class="btn-start-selected" onclick="toggleHelpModal(false)">とじる</button>
+        </div>
+    </div>
+    <script>
+        window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
+
+        // URLパラメータ (?slot=2 など) も優先して正しいスロット番号を取得
+        const _urlParams = new URLSearchParams(window.location.search);
+        let currentSlot = _urlParams.get('slot') || localStorage.getItem('tofu_current_slot') || localStorage.getItem('currentSlot') || 1;
+        localStorage.setItem('tofu_current_slot', currentSlot);
+
+        let globalData = JSON.parse(localStorage.getItem(`tofu_save_${currentSlot}`)) || { mame: 0, tough: 0, hue: 0, music: 0, rizumu: 0 };
+        let rizumuData = JSON.parse(localStorage.getItem(`tofu_rizumu_slot_${currentSlot}`)) || { ranks: {}, seenKeys: { "1-1": true } };
+        if (!rizumuData.ranks) rizumuData.ranks = {};
+        if (!rizumuData.seenKeys) rizumuData.seenKeys = { "1-1": true };
+        if (!rizumuData.seenKeys["1-1"]) rizumuData.seenKeys["1-1"] = true;
+
+        const GAME_COLUMNS = new Array(
+            new Array(
+                { title: "豆腐工場", desc: "手前から流れてくる豆腐を、\nT字の機械で奥のパックに乗せよう！" },
+                { title: "大豆選別", desc: "流れてくる豆の中から、\nリズムよく悪い豆だけを弾き出そう！" },
+                { title: "にがり打ち", desc: "裏拍のタイミングを見極めて、\n豆乳ににがりを滴下しよう！" },
+                { title: "水切りプレス", desc: "力強いビートに乗って、\n油圧プレスでしっかり水切りしよう！" },
+                { title: "リミックス1", desc: "これまでの4つの工程が\n音楽に合わせて次々と切り替わるヨ！" }
+            ),
+            new Array(
+                { title: "豆乳かくはん", desc: "大きな釜の豆乳を\n一定のリズムでかき混ぜよう！" },
+                { title: "型箱ならべ", desc: "空の型箱をコンベアの上に\nテンポよく並べていこう！" },
+                { title: "湯気タイミング", desc: "立ちのぼる湯気の合図を聞いて\n釜のフタを開けよう！" },
+                { title: "パック詰め", desc: "できたての豆腐を\nパックに素早く詰め込もう！" },
+                { title: "リミックス2", desc: "第2エリアの4つの工程が\n次々と入れ替わる総まとめ！" }
+            ),
+            new Array(
+                { title: "油揚げフライ", desc: "薄切り豆腐を油に投入！\n揚がる音を聞いて引き上げよう！" },
+                { title: "厚揚げ二度揚げ", desc: "二度目の揚げタイミングが命！\nカリッと香ばしく仕上げよう！" },
+                { title: "焼き豆腐バーナー", desc: "リズムに合わせてバーナー点火！\nきれいな焼き目をつけよう！" },
+                { title: "串打ちリズム", desc: "田楽豆腐に串を刺すヨ！\nリズミカルに打ち込もう！" },
+                { title: "リミックス3", desc: "揚げ物と焼き物の工程が\nノンストップで押し寄せる！" }
+            ),
+            new Array(
+                { title: "レーザー検品", desc: "高速で通過する豆腐に\n検品レーザーを照射しよう！" },
+                { title: "異物ピストン", desc: "混ざり込んだ異物を\nピストンで正確に弾き飛ばそう！" },
+                { title: "硬度テスト", desc: "豆腐のやわらかさをチェック！\n絶妙な力加減でタップしよう！" },
+                { title: "出荷スタンプ", desc: "合格した豆腐の箱に\n出荷済みのハンコを押そう！" },
+                { title: "リミックス4", desc: "精密検品ラボの全工程が\n入り乱れるスピードステージ！" }
+            ),
+            new Array(
+                { title: "高野豆腐乾燥", desc: "凍らせた豆腐を並べて\n寒風でしっかり乾燥させよう！" },
+                { title: "枝豆ペースト", desc: "すり鉢で枝豆をすりつぶし\nなめらかな緑の豆腐を作ろう！" },
+                { title: "湯葉すくい", desc: "豆乳の表面に張った湯葉を\n破らないよう優しくすくおう！" },
+                { title: "杏仁クコの実乗せ", desc: "仕上げに赤いクコの実を\n真ん中にポトンと乗せよう！" },
+                { title: "リミックス5", desc: "特殊豆腐セクションの\n多彩なリズムを乗りこなそう！" }
+            ),
+            new Array(
+                { title: "高速コンベア", desc: "スピードアップしたラインで\n次々と豆腐をさばいていこう！" },
+                { title: "ツインアーム", desc: "左右2本のアームを操り\n交互のリズムで仕分けしよう！" },
+                { title: "蒸気バルブ", desc: "圧力計の針を見て\nタイミングよく蒸気を逃がそう！" },
+                { title: "夜間シフト", desc: "静かな夜の無人工場で\n音だけを頼りに作業しよう！" },
+                { title: "リミックス6", desc: "前半戦の集大成！\n全自動コンビナートを制覇しよう！" }
+            ),
+            new Array(
+                { title: "豆腐工場 2", desc: "さらに複雑になったリズムで\n豆腐を弾き飛ばす上級ライン！" },
+                { title: "大豆選別 2", desc: "フェイントが混ざる高速ラインで\n悪い豆を見極めよう！" },
+                { title: "にがり打ち 2", desc: "変則ビートに合わせて\n正確な量のにがりを打とう！" },
+                { title: "水切りプレス 2", desc: "連続プレスと溜めプレスを\nリズムよく使い分けよう！" },
+                { title: "リミックス7", desc: "パワーアップした工場工程の\nハイスピードリミックス！" }
+            ),
+            new Array(
+                { title: "豆乳かくはん 2", desc: "緩急のついたメロディに合わせ\n豆乳を練り上げよう！" },
+                { title: "湯気タイミング 2", desc: "視界が湯気で真っ白に！\n耳を澄ましてタイミングを掴もう！" },
+                { title: "油揚げフライ 2", desc: "次々と投入される油揚げを\n焦がさず全部引き上げよう！" },
+                { title: "焼き豆腐バーナー 2", desc: "連続バーナー照射で\n完璧な焼き格子を作ろう！" },
+                { title: "リミックス8", desc: "上級調理工程が入れ替わる\nテクニカルなリミックス！" }
+            ),
+            new Array(
+                { title: "レーザー検品 2", desc: "超高速ラインの豆腐を\n一瞬の判断で検品しよう！" },
+                { title: "異物ピストン 2", desc: "連続で流れてくる異物を\n連打ピストンで撃退しよう！" },
+                { title: "高野豆腐乾燥 2", desc: "吹雪のリズムに負けないよう\nテンポよく並べよう！" },
+                { title: "湯葉すくい 2", desc: "繊細な裏拍リズムで\n極上の湯葉を引き上げよう！" },
+                { title: "リミックス9", desc: "上級検品＆特殊工程の\n息をつかせぬリミックス！" }
+            ),
+            new Array(
+                { title: "杏仁クコの実 2", desc: "高速回転するお皿の真ん中に\nクコの実を乗せ続けよう！" },
+                { title: "高速コンベア 2", desc: "限界スピードのコンベアで\nリズム感を試そう！" },
+                { title: "ツインアーム 2", desc: "変則ポリリズムに合わせて\n左右のアームを動かそう！" },
+                { title: "出荷スタンプ 2", desc: "大量の出荷箱に\n迷いなくスタンプを押し続けよう！" },
+                { title: "リミックス10", desc: "超精密ラインのすべてが\n凝縮された難関リミックス！" }
+            ),
+            new Array(
+                { title: "夜間シフト 2", desc: "真っ暗な工場の中で\n機械の作動音だけを頼りに打とう！" },
+                { title: "パック詰め 2", desc: "2個同時・3個同時パックを\nリズム通りに詰めよう！" },
+                { title: "蒸気バルブ 2", desc: "急上昇する圧力を\n正確なビートで解放しよう！" },
+                { title: "厚揚げ二度揚げ 2", desc: "絶妙な間合いを見極めて\n最高級の厚揚げを作ろう！" },
+                { title: "リミックス11", desc: "極限ファクトリーの試練！\n全集中で乗り切ろう！" }
+            ),
+            new Array(
+                { title: "試練の組み立て", desc: "これまでの組み立て技術の\nすべてが問われる最終試験！" },
+                { title: "試練の検品", desc: "一瞬の油断も許されない\n究極の検品ライン！" },
+                { title: "試練の揚げ場", desc: "怒涛の連続リズムで\nすべての揚げ物を仕上げよう！" },
+                { title: "試練の最終出荷", desc: "最後の出荷ライン！\n完璧なリズムで送り出そう！" },
+                { title: "ファイナルリミックス", desc: "すべての豆腐づくりが集結する\n最後のグランドフィナーレ！" }
+            )
+        );
+
+        let selectedCol = 0;
+        let selectedRow = 0;
+        let audioCtx = null;
+        let masterOut = null;
+
+        function ensureAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const comp = audioCtx.createDynamicsCompressor();
+                comp.threshold.setValueAtTime(-18, audioCtx.currentTime);
+                comp.knee.setValueAtTime(12, audioCtx.currentTime);
+                comp.ratio.setValueAtTime(6, audioCtx.currentTime);
+                comp.attack.setValueAtTime(0.005, audioCtx.currentTime);
+                comp.release.setValueAtTime(0.15, audioCtx.currentTime);
+                comp.connect(audioCtx.destination);
+                masterOut = comp;
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function getSeVol() { return (document.getElementById('se-vol').value || 85) / 100; }
+        function getBgmVol() { return (document.getElementById('bgm-vol').value || 75) / 100; }
+        function playPikon(freq = 587.33) {
+            try {
+                ensureAudio();
+                let now = audioCtx.currentTime;
+                let osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(0.18 * getSeVol(), now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                osc.connect(gain); gain.connect(masterOut || audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.12);
+            } catch (e) {}
+        }
+
+        function playUnlockPiropiro() {
+            try {
+                ensureAudio();
+                let now = audioCtx.currentTime;
+                const notes = new Array(523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50, 1318.51, 1567.98);
+                notes.forEach((f, idx) => {
+                    let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.type = 'triangle';
+                    o.frequency.setValueAtTime(f, now + idx * 0.065);
+                    g.gain.setValueAtTime(0.14 * getSeVol(), now + idx * 0.065);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.18);
+                    o.connect(g); g.connect(masterOut || audioCtx.destination);
+                    o.start(now + idx * 0.065); o.stop(now + idx * 0.065 + 0.19);
+                });
+            } catch (e) {}
+        }
+
+        function isGameUnlocked(col, row) {
+            if (col === 0 && row === 0) return true;
+            if (row === 0) return (rizumuData.ranks[`${col}-5`] || 0) >= 1;
+            return (rizumuData.ranks[`${col + 1}-${row}`] || 0) >= 1;
+        }
+
+        function getGameSvgIcon(col, row) {
+            if (row === 4) {
+                return `<svg width="38" height="38" viewBox="0 0 40 40"><polygon points="20,4 25,15 37,16 28,24 31,36 20,29 9,36 12,24 3,16 15,15" fill="#e9d7a5" stroke="#8c6d23" stroke-width="2.5"/></svg>`;
+            }
+            if ((col === 0 || col === 6) && row === 0) {
+                return `<svg width="38" height="38" viewBox="0 0 40 40"><rect x="8" y="18" width="24" height="14" rx="3" fill="#ffffff" stroke="#4a4a4a" stroke-width="2.5"/><path d="M20,14 L20,5 M14,8 L26,8" stroke="#d4a017" stroke-width="3.2" fill="none" stroke-linecap="round"/></svg>`;
+            }
+            if ((col === 0 || col === 6) && row === 1) {
+                return `<svg width="38" height="38" viewBox="0 0 40 40"><ellipse cx="16" cy="22" rx="7" ry="10" transform="rotate(-20 16 22)" fill="#f5e6ab" stroke="#8c6d23" stroke-width="2.2"/><ellipse cx="26" cy="18" rx="6" ry="9" transform="rotate(15 26 18)" fill="#f5e6ab" stroke="#8c6d23" stroke-width="2.2"/></svg>`;
+            }
+            if ((col === 0 || col === 6) && row === 2) {
+                return `<svg width="38" height="38" viewBox="0 0 40 40"><path d="M20,6 C20,6 30,19 30,26 A10,10 0 1,1 10,26 C10,19 20,6 20,6 Z" fill="#e1f5fe" stroke="#0288d1" stroke-width="2.5"/></svg>`;
+            }
+            if ((col === 0 || col === 6) && row === 3) {
+                return `<svg width="38" height="38" viewBox="0 0 40 40"><rect x="10" y="7" width="20" height="7" rx="2" fill="#b8b2a0" stroke="#4a4a4a" stroke-width="2"/><path d="M20,14 L20,24 M15,20 L20,25 L25,20" stroke="#4a4a4a" stroke-width="2.5" fill="none"/><rect x="9" y="27" width="22" height="7" rx="2" fill="#ffffff" stroke="#4a4a4a" stroke-width="2"/></svg>`;
+            }
+            return `<svg width="36" height="36" viewBox="0 0 40 40"><rect x="9" y="10" width="22" height="20" rx="4" fill="#ffffff" stroke="#4a4a4a" stroke-width="2.5"/><circle cx="16" cy="20" r="2" fill="#4a4a4a"/><circle cx="24" cy="20" r="2" fill="#4a4a4a"/></svg>`;
+        }
+        function enterStageSelect() {
+            if (!document.getElementById('title-screen').classList.contains('active')) return;
+            playPikon(659.25);
+            document.getElementById('title-screen').classList.remove('active');
+            document.getElementById('select-screen').classList.add('active');
+            renderAllSelectUI(false);
+        }
+
+        function renderAllSelectUI(allowUnlockShine = false) {
+            const colsWrap = document.getElementById('matrix-columns');
+            colsWrap.innerHTML = "";
+            let newlyUnlockedFound = false;
+
+            GAME_COLUMNS.forEach((colGames, colIdx) => {
+                if (!isGameUnlocked(colIdx, 0)) return;
+
+                let colEl = document.createElement('div');
+                colEl.className = 'chap-col';
+
+                colGames.forEach((gObj, rowIdx) => {
+                    let key = `${colIdx + 1}-${rowIdx + 1}`;
+                    let unlocked = isGameUnlocked(colIdx, rowIdx);
+                    let rank = rizumuData.ranks[key] || 0;
+                    let isRemix = (rowIdx === 4);
+                    let isSelected = (selectedCol === colIdx && selectedRow === rowIdx);
+
+                    // 初めて「豆腐工場」等をクリアして次のゲームが出現したときのみキラキラ収束
+                    let isNewShine = false;
+                    if (allowUnlockShine && unlocked && !rizumuData.seenKeys[key]) {
+                        rizumuData.seenKeys[key] = true;
+                        isNewShine = true;
+                        newlyUnlockedFound = true;
+                        selectedCol = colIdx;
+                        selectedRow = rowIdx;
+                        isSelected = true;
+                    }
+
+                    let tile = document.createElement('div');
+                    tile.className = 'sq-tile'
+                        + (isRemix ? ' remix' : '')
+                        + (!unlocked ? ' locked' : '')
+                        + (isSelected ? ' selected' : '')
+                        + (isNewShine ? ' unlock-shine' : '');
+
+                    let pMedalHtml = (rank === 3) ? `<div class="p-medal">P</div>` : '';
+
+                    tile.innerHTML = unlocked
+                        ? `${pMedalHtml}${getGameSvgIcon(colIdx, rowIdx)}`
+                        : `<span style="font-size:22px; font-weight:bold;">?</span>`;
+
+                    tile.onclick = () => {
+                        if (!unlocked) return;
+                        if (isSelected) {
+                            startSelectedGame();
+                        } else {
+                            playPikon(523.25 + rowIdx * 65);
+                            selectedCol = colIdx;
+                            selectedRow = rowIdx;
+                            renderAllSelectUI(false);
+                        }
+                    };
+                    colEl.appendChild(tile);
+                });
+
+                colsWrap.appendChild(colEl);
+            });
+
+            if (newlyUnlockedFound) {
+                localStorage.setItem(`tofu_rizumu_slot_${currentSlot}`, JSON.stringify(rizumuData));
+                playUnlockPiropiro();
+            }
+
+            updateInfoPanel();
+        }
+
+        function updateInfoPanel() {
+            const gObj = GAME_COLUMNS[selectedCol][selectedRow];
+            const key = `${selectedCol + 1}-${selectedRow + 1}`;
+            const rank = rizumuData.ranks[key] || 0;
+
+            document.getElementById('info-title').innerText = gObj.title;
+            document.getElementById('info-desc').innerText = gObj.desc;
+
+            let rankText = "ー";
+            let rankColor = "#8c8c8c";
+            if (rank === 1) { rankText = "普通"; rankColor = "#4a4a4a"; }
+            else if (rank === 2) { rankText = "豆腐"; rankColor = "#8c6d23"; }
+            else if (rank === 3) { rankText = "豆腐（パーフェクト）"; rankColor = "#d4a017"; }
+
+            const rankEl = document.getElementById('info-rank');
+            rankEl.innerText = rankText;
+            rankEl.style.color = rankColor;
+        }
+        const canvas = document.getElementById('rhythm-canvas');
+        const ctx = canvas.getContext('2d');
+        let activeKey = null;
+        let activeGameObj = null;
+        let lastFrameTime = performance.now();
+
+        function startSelectedGame() {
+            let key = `${selectedCol + 1}-${selectedRow + 1}`;
+            let title = GAME_COLUMNS[selectedCol][selectedRow].title;
+            const gameObj = window.RIZUMU_GAMES[key];
+            if (!gameObj) {
+                alert(`【${title}】は現在制作準備中です！`);
+                return;
+            }
+            playPikon(783.99);
+            activeKey = key;
+            activeGameObj = gameObj;
+
+            document.getElementById('select-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+
+            const trigger = document.querySelector('.sidebar-trigger');
+            if (trigger) trigger.style.display = 'none';
+
+            if (gameObj.start) gameObj.start(title);
+        }
+
+        window.finishRizumuGame = function(rankVal) {
+            activeGameObj = null;
+
+            if (typeof rankVal === 'number' && rankVal >= 0) {
+                let prevRank = rizumuData.ranks[activeKey] || 0;
+                if (rankVal > prevRank) {
+                    rizumuData.ranks[activeKey] = rankVal;
+                }
+                localStorage.setItem(`tofu_rizumu_slot_${currentSlot}`, JSON.stringify(rizumuData));
+                syncRizumuProgressToPortal();
+            }
+
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('select-screen').classList.add('active');
+
+            const trigger = document.querySelector('.sidebar-trigger');
+            if (trigger) trigger.style.display = 'flex';
+
+            renderAllSelectUI(rankVal >= 1);
+        };
+
+        window.quitRizumuGame = function() {
+            window.finishRizumuGame(-1);
+        };
+
+        function syncRizumuProgressToPortal() {
+            let highCount = 0, perfCount = 0;
+            for (let c = 1; c <= 12; c++) {
+                for (let g = 1; g <= 5; g++) {
+                    let r = rizumuData.ranks[`${c}-${g}`] || 0;
+                    if (r >= 2) highCount++;
+                    if (r >= 3) perfCount++;
+                }
+            }
+            let pct = (perfCount >= 60) ? 102 : Math.min(100, Math.floor((highCount / 60) * 100));
+            if ((globalData.rizumu || 0) < pct) {
+                globalData.rizumu = pct;
+                localStorage.setItem(`tofu_save_${currentSlot}`, JSON.stringify(globalData));
+            }
+        }
+
+        function toggleSidebar(forceState) {
+            const sb = document.getElementById('sidebar');
+            const isOpen = (typeof forceState === 'boolean') ? forceState : !sb.classList.contains('open');
+            if (isOpen) {
+                const btn = document.getElementById('side-context-btn');
+                if (document.getElementById('title-screen').classList.contains('active')) btn.innerText = "とうふ に戻る";
+                else btn.innerText = "タイトルに戻る";
+                sb.classList.add('open');
+            } else {
+                sb.classList.remove('open');
+            }
+        }
+
+        function toggleHelpModal(show) {
+            playPikon(show ? 659.25 : 440);
+            document.getElementById('help-modal').classList.toggle('active', show);
+        }
+
+        function handleSideContextAction() {
+            toggleSidebar(false);
+            if (document.getElementById('title-screen').classList.contains('active')) {
+                document.getElementById('title-screen').classList.remove('active');
+                const trigger = document.querySelector('.sidebar-trigger');
+                if (trigger) trigger.style.display = 'none';
+                document.getElementById('loading-screen').classList.add('active');
+                setTimeout(() => { window.location.href = "Tofu.html"; }, 4800);
+            } else {
+                playPikon(440);
+                document.getElementById('select-screen').classList.remove('active');
+                document.getElementById('title-screen').classList.add('active');
+            }
+        }
+
+        function saveVol() {
+            localStorage.setItem('tofu_rizumu_bgm_vol', document.getElementById('bgm-vol').value);
+            localStorage.setItem('tofu_rizumu_se_vol', document.getElementById('se-vol').value);
+        }
+        function mainLoop(now) {
+            let dt = (now - lastFrameTime) / 1000;
+            lastFrameTime = now;
+            if (dt > 0.1) dt = 0.1;
+
+            if (document.getElementById('game-screen').classList.contains('active') && activeGameObj) {
+                if (activeGameObj.update) activeGameObj.update(dt);
+                if (activeGameObj.draw) activeGameObj.draw(ctx, canvas);
+            }
+            requestAnimationFrame(mainLoop);
+        }
+
+        function initRizumu() {
+            document.getElementById('bgm-vol').value = localStorage.getItem('tofu_rizumu_bgm_vol') || 75;
+            document.getElementById('se-vol').value = localStorage.getItem('tofu_rizumu_se_vol') || 85;
+
+            canvas.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                if (activeGameObj && activeGameObj.onInput) activeGameObj.onInput('pointer', e);
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.repeat) return;
+
+                if (document.getElementById('help-modal').classList.contains('active')) {
+                    if (e.key === 'Escape' || e.key === 'Enter' || e.code === 'Space') {
+                        e.preventDefault(); toggleHelpModal(false);
+                    }
+                    return;
+                }
+                if (e.key === 'm' || e.key === 'M') {
+                    if (document.getElementById('game-screen').classList.contains('active')) return;
+                    e.preventDefault(); toggleSidebar(); return;
+                }
+                if (document.getElementById('sidebar').classList.contains('open')) return;
+
+                if (document.getElementById('title-screen').classList.contains('active')) {
+                    e.preventDefault(); enterStageSelect(); return;
+                }
+                if (document.getElementById('select-screen').classList.contains('active')) {
+                    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                        e.preventDefault();
+                        if (selectedRow < 4 && isGameUnlocked(selectedCol, selectedRow + 1)) {
+                            selectedRow++; playPikon(523.25 + selectedRow * 65); renderAllSelectUI(false);
+                        }
+                    } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                        e.preventDefault();
+                        if (selectedRow > 0) {
+                            selectedRow--; playPikon(523.25 + selectedRow * 65); renderAllSelectUI(false);
+                        }
+                    } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                        e.preventDefault();
+                        if (selectedCol < 11 && isGameUnlocked(selectedCol + 1, 0)) {
+                            selectedCol++;
+                            if (!isGameUnlocked(selectedCol, selectedRow)) selectedRow = 0;
+                            playPikon(659.25); renderAllSelectUI(false);
+                        }
+                    } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                        e.preventDefault();
+                        if (selectedCol > 0) {
+                            selectedCol--;
+                            if (!isGameUnlocked(selectedCol, selectedRow)) selectedRow = 0;
+                            playPikon(587.33); renderAllSelectUI(false);
+                        }
+                    } else if (e.key === 'Enter' || e.code === 'Space') {
+                        e.preventDefault();
+                        if (isGameUnlocked(selectedCol, selectedRow)) startSelectedGame();
+                    }
+                    return;
+                }
+                if (document.getElementById('game-screen').classList.contains('active') && activeGameObj && activeGameObj.onInput) {
+                    if (e.code === 'Space') e.preventDefault();
+                    activeGameObj.onInput('key', e);
+                }
+            });
+
+            syncRizumuProgressToPortal();
+            lastFrameTime = performance.now();
+            requestAnimationFrame(mainLoop);
+        }
+
+        initRizumu();
+    </script>
+    <script src="rizumu_ch1.js"></script>
+</body>
+</html>

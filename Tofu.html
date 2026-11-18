@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>とうふ - Tofu Complete Collection -</title>
+    <style>
+        :root {
+            --bg-light: #fcfaf2;
+            --panel-white: #ffffff;
+            --tofu-beige: #e9d7a5;
+            --tofu-skin: #f5f0db;
+            --text-main: #4a4a4a;
+            --text-muted: #8c8c8c;
+            --danger-red: #d32f2f;
+            --border-color: #e0dbcd;
+            --tofu-border-dark: #b8b2a0;
+        }
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-light); color: var(--text-main);
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+            overflow-x: hidden;
+        }
+        .screen {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            flex-direction: column; justify-content: flex-start; align-items: center;
+            box-sizing: border-box; padding-top: 30px; overflow-y: auto;
+        }
+        .active { display: flex; }
+
+        #save-screen { background-color: var(--bg-light); padding-top: 30px; }
+        #save-screen h1 { margin-top: 0; margin-bottom: 24px; }
+        .save-container { display: flex; gap: 20px; margin-bottom: 24px; z-index: 10; }
+        .save-slot {
+            background: var(--panel-white); border: 3px solid var(--border-color);
+            border-radius: 8px; width: 220px; padding: 20px; cursor: pointer; text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.02); transition: 0.2s;
+        }
+        .save-slot:hover, .save-slot.selected { border-color: var(--tofu-beige); background: var(--tofu-skin); }
+        .save-slot h3 { margin: 0 0 10px 0; }
+        .save-slot p { margin: 0; font-size: 14px; color: var(--text-muted); }
+
+        .details-panel {
+            background: var(--panel-white); border: 2px solid var(--border-color);
+            border-radius: 8px; width: 540px; max-width: 90%; padding: 22px 24px; text-align: center;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.04); display: none; z-index: 20;
+        }
+        .details-panel.active { display: block; }
+        .details-panel h2 { margin: 0 0 12px 0; font-size: 20px; }
+        .progress-list {
+            text-align: left; margin: 12px auto; width: 88%; font-size: 14px;
+            background: var(--bg-light); padding: 14px 18px; border-radius: 6px; border: 1px solid var(--border-color);
+        }
+        .progress-list div { margin: 6px 0; }
+        .action-buttons { display: flex; justify-content: center; gap: 20px; margin-top: 16px; }
+        .btn { padding: 10px 24px; border: 1px solid var(--border-color); border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .btn-start { background-color: var(--tofu-beige); color: var(--text-main); border-color: #d1bf90; }
+        .btn-start:hover { background-color: #ffffff; }
+        .btn-delete { background-color: var(--danger-red); color: #fff; border: none; }
+        .btn-delete:hover:not(:disabled) { background-color: #ff5252; }
+        .btn-delete:disabled {
+            background-color: #d6d2c4; color: #8c8c8c; cursor: not-allowed; opacity: 0.6;
+        }
+        #loading-screen { background-color: rgba(252, 250, 242, 0.92); z-index: 2000; padding-top: 0; justify-content: flex-end; align-items: flex-end; }
+        .loading-wrap { display: flex; flex-direction: column; align-items: center; margin-right: 40px; margin-bottom: 40px; }
+        .loading-tofu {
+            width: 30px; height: 30px; background-color: #ffffff; border: 2px solid var(--tofu-border-dark);
+            border-radius: 4px; box-shadow: 0 5px 10px rgba(0,0,0,0.05);
+            animation: tofu-bounce 0.5s infinite alternate ease-in-out;
+        }
+        @keyframes tofu-bounce {
+            0% { transform: translateY(0) scaleX(1) scaleY(1); }
+            85% { transform: translateY(-15px) scaleX(1) scaleY(1); }
+            100% { transform: translateY(-18px) scaleX(0.96) scaleY(1.04); }
+        }
+        .loading-text { margin-top: 10px; font-weight: bold; letter-spacing: 2px; color: var(--tofu-beige); font-size: 12px; }
+
+        #main-screen { background-color: var(--bg-light); padding: 10px 20px; }
+        .header { text-align: center; margin-top: 5px; }
+        .header h1 { margin-bottom: 2px; font-size: 28px; }
+        .header p { color: var(--text-muted); margin-top: 0; font-size: 14px; }
+        .meter-container {
+            width: 360px; background: #e0dbcd; border-radius: 10px; padding: 4px;
+            margin: 10px auto 18px auto; cursor: pointer; border: 1px solid var(--border-color);
+        }
+        .meter-bar { height: 24px; background: linear-gradient(90deg, #fff, var(--tofu-beige)); width: 0%; border-radius: 8px; transition: width 0.5s ease-in-out; }
+
+        .game-grid-container { display: flex; flex-direction: column; gap: 18px; width: 95%; max-width: 1050px; margin: 5px auto; }
+        .game-row { display: flex; justify-content: center; gap: 20px; width: 100%; }
+        .game-card {
+            background: var(--panel-white); padding: 22px 15px; border-radius: 8px; text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03); text-decoration: none; color: inherit;
+            border: 2px solid var(--border-color); transition: all 0.2s; width: 310px; box-sizing: border-box; cursor: pointer;
+        }
+        .game-card:hover { transform: translateY(-4px); border-color: var(--tofu-beige); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+        .game-card h3 { margin-top: 0; font-size: 17px; margin-bottom: 10px; }
+        .game-card p { margin-bottom: 0; color: #bca465; font-weight: bold; font-size: 14px; }
+        .game-card.locked { background: #f4f1e8; border-style: dashed; opacity: 0.75; cursor: default; }
+        .game-card.locked:hover { transform: none; border-color: var(--border-color); }
+        .game-card.locked h3, .game-card.locked p { color: var(--text-muted); }
+
+        .main-notice {
+            background: var(--panel-white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.7;
+            margin: 20px auto 15px auto;
+            max-width: 680px;
+            width: 90%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            box-sizing: border-box;
+        }
+
+        .sidebar-trigger {
+            position: fixed; right: 15px; top: 15px;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 100; transition: 0.2s; user-select: none;
+        }
+        .sidebar-trigger-tofu {
+            width: 32px; height: 32px; background-color: #ffffff;
+            border: 2px solid var(--tofu-border-dark); border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s;
+        }
+        .sidebar-trigger:hover .sidebar-trigger-tofu { border-color: var(--tofu-beige); background-color: var(--tofu-skin); }
+        .sidebar-trigger-text { font-size: 10px; font-weight: bold; color: var(--text-muted); margin-top: 4px; letter-spacing: 1px; }
+        .side-panel {
+            position: fixed; right: -320px; top: 0; width: 300px; height: 100vh;
+            background: var(--panel-white); border-left: 2px solid var(--border-color);
+            box-shadow: -4px 0 16px rgba(0,0,0,0.04); z-index: 1000; transition: right 0.3s ease-in-out;
+            padding: 30px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px;
+        }
+        .side-panel.open { right: 0; }
+        .panel-close { align-self: flex-start; cursor: pointer; font-weight: bold; color: var(--text-muted); }
+        .panel-section { border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+        .panel-section h4 { margin: 0 0 10px 0; color: var(--text-main); }
+        .panel-btn { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-light); font-weight: bold; cursor: pointer; }
+        .panel-btn:hover { background: var(--tofu-skin); }
+
+        #credits-screen { background-color: #1a1a1a; color: #fcfaf2; z-index: 3000; overflow: hidden; padding-top: 0; cursor: pointer; }
+        .credits-roll { position: absolute; top: 100%; width: 85%; max-width: 600px; text-align: center; line-height: 2.3; animation: roll-up 22s linear forwards; }
+        .credits-roll h2 { color: var(--tofu-beige); letter-spacing: 3px; margin-bottom: 20px; }
+        @keyframes roll-up { 0% { transform: translateY(0); } 100% { transform: translateY(-165%); } }
+    </style>
+</head>
+<body>
+    <audio id="bgm-player" loop src="bgm.mp3"></audio>
+
+    <div id="save-screen" class="screen active" onclick="closeDetailsPanel()">
+        <h1>セーブデータ選択</h1>
+        <div class="save-container" onclick="event.stopPropagation()">
+            <div id="slot-1" class="save-slot" onclick="selectSlot(1)"><h3>データ 1</h3><p id="slot-status-1">読み込み中...</p></div>
+            <div id="slot-2" class="save-slot" onclick="selectSlot(2)"><h3>データ 2</h3><p id="slot-status-2">読み込み中...</p></div>
+            <div id="slot-3" class="save-slot" onclick="selectSlot(3)"><h3>データ 3</h3><p id="slot-status-3">読み込み中...</p></div>
+        </div>
+
+        <div id="details-panel" class="details-panel" onclick="event.stopPropagation()">
+            <h2 id="details-title">データ詳細</h2>
+            <div class="progress-list">
+                <div>・1. 豆（腐）知識: <span id="det-mame">0%</span></div>
+                <div>・2. Tough Tofu: <span id="det-tough">0%</span></div>
+                <div>・3. 不壊豆腐: <span id="det-hue">0%</span></div>
+                <div>・4. TFM: <span id="det-music">0%</span></div>
+                <div>・5. 〜豆腐づくりとはリズムである〜: <span id="det-rizumu">0%</span></div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-start" onclick="confirmStart()">スタート</button>
+                <button id="btn-delete" class="btn btn-delete" onclick="confirmDelete()">廃棄する</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-screen" class="screen">
+        <div class="loading-wrap">
+            <div class="loading-tofu"></div>
+            <div class="loading-text">生成中...</div>
+        </div>
+    </div>
+
+    <div id="credits-screen" class="screen" onclick="closeCredits()">
+        <div id="credits-content" class="credits-roll"></div>
+        <div style="position: fixed; bottom: 20px; right: 25px; font-size: 12px; color: #8c8c8c;">画面クリックで戻る</div>
+    </div>
+    <div id="main-screen" class="screen">
+        <div class="header">
+            <h1>とうふ</h1>
+            <p>- Tofu Complete Collection -</p>
+        </div>
+        <div class="meter-container" onclick="clickMeter()">
+            <div id="meter-bar" class="meter-bar"></div>
+            <div id="meter-text" style="text-align: center; margin-top: -22px; font-weight: bold; color: var(--text-main); text-shadow: 1px 1px 0px #fff;">総合豆腐度: 0%</div>
+        </div>
+
+        <div class="game-grid-container">
+            <div class="game-row">
+                <div class="game-card" onclick="goToGame('Tmame.html')"><h3>1. 豆（腐）知識</h3><p id="g-mame">豆腐度: 0%</p></div>
+                <div class="game-card" onclick="goToGame('tough-tofu.html')"><h3>2. Tough Tofu</h3><p id="g-tough">豆腐度: 0%</p></div>
+                <div class="game-card" onclick="goToGame('hue-tofu.html')"><h3>3. 不壊豆腐</h3><p id="g-hue">豆腐度: 0%</p></div>
+            </div>
+            <div class="game-row">
+                <div class="game-card" onclick="goToGame('TFM.html')"><h3>4. TFM</h3><p id="g-music">豆腐度: 0%</p></div>
+                <div class="game-card" onclick="goToGame('rizumu_tofu.html')"><h3>5. 〜豆腐づくりとはリズムである〜</h3><p id="g-rizumu">豆腐度: 0%</p></div>
+                <div id="card-bonus" class="game-card locked" onclick="clickBonusCard()"><h3>6. ？？？</h3><p id="g-bonus">Coming Soon...</p></div>
+            </div>
+        </div>
+
+        <div class="main-notice">
+            ※このゲームは一つ一つのボリュームが多く、推定プレイ時間は102時間です。<br>
+            また、作者が遊びたかったため音ゲー・リズム系が2作品入っています。やりたいときにやりたいゲームを遊んでね。
+        </div>
+    </div>
+
+    <div id="sidebar-trigger" class="sidebar-trigger" onclick="toggleSidebar(true)">
+        <div class="sidebar-trigger-tofu"></div>
+        <div class="sidebar-trigger-text">メニュー</div>
+    </div>
+
+    <div id="side-panel" class="side-panel">
+        <div class="panel-close" onclick="toggleSidebar(false)">▶ 閉じる</div>
+        <h3>設定・管理</h3>
+        <div class="panel-section">
+            <h4>ボリューム設定</h4>
+            <label style="font-size:12px;">マスター音量</label>
+            <input type="range" id="volume-slider" min="0" max="100" value="80" style="width:100%;" oninput="changeVolume(this.value)">
+        </div>
+        <div class="panel-section">
+            <h4>システム</h4>
+            <button class="panel-btn" onclick="backToTitle()">データ選択に戻る</button>
+        </div>
+        <div class="panel-section" style="border-bottom: none;">
+            <h4>セーブコードの保存</h4>
+            <button class="panel-btn" onclick="alert('ゲーム完成時にここにコード出力機能を組み込みます！')">コードを出力する</button>
+            <button class="panel-btn" onclick="alert('ここにコード入力機能を組み込みます！')">コードを読み込む</button>
+        </div>
+    </div>
+    <script>
+function clearLinkedGameData(slot) {
+    localStorage.removeItem(`tofu_rizumu_slot_${slot}`);
+    localStorage.removeItem(`tofu_mame_tmart_slot_${slot}`);
+    localStorage.removeItem(`tofu_mame_plant_slot_${slot}`);
+    localStorage.removeItem(`tofu_mame_slide_slot_${slot}`);
+    localStorage.removeItem(`tofu_mame_v2_slot_${slot}`);
+    localStorage.removeItem(`tofu_mame_factory_slot_${slot}`);
+}
+
+        let chosenSlot = null;
+        let gameData = { mame: 0, tough: 0, hue: 0, music: 0, rizumu: 0, seenNormalEnd: false, seenTrueEnd: false };
+        let bgm = document.getElementById('bgm-player');
+
+        function isAll102(d) {
+            return (d.mame >= 102 && d.tough >= 102 && d.hue >= 102 && d.music >= 102 && (d.rizumu || 0) >= 102);
+        }
+
+        function calcTotalDisplay(d) {
+            if (isAll102(d)) return 102;
+            let sum = (d.mame || 0) + (d.tough || 0) + (d.hue || 0) + (d.music || 0) + (d.rizumu || 0);
+            return Math.min(100, Math.floor(sum / 5));
+        }
+
+        function updateSlotVisuals() {
+            for(let i = 1; i <= 3; i++) {
+                let data = JSON.parse(localStorage.getItem(`tofu_save_${i}`));
+                let statusText = "記録なし";
+                if(data) {
+                    let displayTotal = calcTotalDisplay(data);
+                    if(displayTotal === 102) {
+                        statusText = '『「とうふ」になった』';
+                    } else if(displayTotal === 100) {
+                        statusText = '『「豆腐」になった』';
+                    } else {
+                        statusText = `進捗度: ${displayTotal}%`;
+                    }
+                }
+                document.getElementById(`slot-status-${i}`).innerText = statusText;
+                document.getElementById(`slot-${i}`).classList.remove('selected');
+            }
+        }
+
+        function selectSlot(slot) {
+            chosenSlot = slot;
+            for(let i = 1; i <= 3; i++) { document.getElementById(`slot-${i}`).classList.remove('selected'); }
+            document.getElementById(`slot-${slot}`).classList.add('selected');
+
+            let data = localStorage.getItem(`tofu_save_${slot}`);
+            document.getElementById('btn-delete').disabled = !data;
+
+            gameData = data ? JSON.parse(data) : { mame: 0, tough: 0, hue: 0, music: 0, rizumu: 0, seenNormalEnd: false, seenTrueEnd: false };
+            if (gameData.rizumu === undefined) gameData.rizumu = 0;
+
+            let displayTotal = calcTotalDisplay(gameData);
+            document.getElementById('details-title').innerText = `データ ${slot} の説明 (総合: ${displayTotal}%)`;
+            document.getElementById('det-mame').innerText = `${gameData.mame}%`;
+            document.getElementById('det-tough').innerText = `${gameData.tough}%`;
+            document.getElementById('det-hue').innerText = `${gameData.hue}%`;
+            document.getElementById('det-music').innerText = `${gameData.music}%`;
+            document.getElementById('det-rizumu').innerText = `${gameData.rizumu}%`;
+            document.getElementById('details-panel').classList.add('active');
+        }
+
+        function closeDetailsPanel() {
+            document.getElementById('details-panel').classList.remove('active');
+            for(let i = 1; i <= 3; i++) { document.getElementById(`slot-${i}`).classList.remove('selected'); }
+            chosenSlot = null;
+        }
+
+        function confirmStart() {
+            if(chosenSlot === null) return;
+            if(!localStorage.getItem(`tofu_save_${chosenSlot}`)) {
+                localStorage.setItem(`tofu_save_${chosenSlot}`, JSON.stringify(gameData));
+            }
+            localStorage.setItem('tofu_loading_slot', chosenSlot);
+            localStorage.removeItem('tofu_current_slot');
+            playBGM();
+
+            document.getElementById('save-screen').classList.remove('active');
+            document.getElementById('loading-screen').classList.add('active');
+
+            setTimeout(() => {
+                localStorage.removeItem('tofu_loading_slot');
+                localStorage.setItem('tofu_current_slot', chosenSlot);
+                document.getElementById('loading-screen').classList.remove('active');
+                document.getElementById('main-screen').classList.add('active');
+                document.getElementById('sidebar-trigger').style.display = 'flex';
+                initMainScreen();
+            }, 4800);
+        }
+
+        function confirmDelete() {
+            if(chosenSlot === null) return;
+            if(!localStorage.getItem(`tofu_save_${chosenSlot}`)) return;
+            if(confirm(`データ ${chosenSlot} を完全に廃棄します。よろしいですか？`)) {
+                localStorage.removeItem(`tofu_save_${chosenSlot}`);
+                clearLinkedGameData(chosenSlot);
+                document.getElementById('details-panel').classList.remove('active');
+                chosenSlot = null;
+                updateSlotVisuals();
+            }
+        }
+
+let targetSlot = (typeof currentSlot !== 'undefined') ? currentSlot
+               : (typeof selectedSlot !== 'undefined') ? selectedSlot
+               : (localStorage.getItem('tofu_current_slot') || 1);
+clearLinkedGameData(targetSlot);
+
+        function goToGame(url) {
+            if(bgm) bgm.pause();
+            document.getElementById('main-screen').classList.remove('active');
+            document.getElementById('sidebar-trigger').style.display = 'none';
+            document.getElementById('loading-screen').classList.add('active');
+
+            setTimeout(() => {
+                window.location.href = url;
+            }, 4800);
+        }
+
+        function initMainScreen() {
+            document.getElementById('g-mame').innerText = `豆腐度: ${Math.min(100, gameData.mame)}%`;
+            document.getElementById('g-tough').innerText = `豆腐度: ${Math.min(100, gameData.tough)}%`;
+            document.getElementById('g-hue').innerText = `豆腐度: ${Math.min(100, gameData.hue)}%`;
+            document.getElementById('g-music').innerText = `豆腐度: ${Math.min(100, gameData.music)}%`;
+            document.getElementById('g-rizumu').innerText = `豆腐度: ${Math.min(100, gameData.rizumu || 0)}%`;
+
+            let totalPercentage = calcTotalDisplay(gameData);
+            document.getElementById('meter-bar').style.width = `${Math.min(100, totalPercentage)}%`;
+            document.getElementById('meter-text').innerText = `総合豆腐度: ${totalPercentage}%`;
+
+            const bonusCard = document.getElementById('card-bonus');
+            if (isAll102(gameData)) {
+                bonusCard.classList.remove('locked');
+                bonusCard.innerHTML = `<h3>6. 秘密の試作室</h3><p style="color:#bca465;">解放済み（クリックで遊ぶ）</p>`;
+            }
+        }
+
+        function clickBonusCard() {
+            if (isAll102(gameData)) {
+                alert("【102%達成ご褒美】\n秘密のミニゲームは今後のアップデートで実装予定です！");
+            }
+        }
+
+        function toggleSidebar(open) {
+            document.getElementById('side-panel').classList.toggle('open', open);
+        }
+
+        function changeVolume(val) {
+            if(bgm) {
+                bgm.volume = val / 100;
+                localStorage.setItem('tofu_master_volume', val);
+            }
+        }
+
+        function playBGM() {
+            if(bgm) {
+                let savedVol = localStorage.getItem('tofu_master_volume') || 80;
+                document.getElementById('volume-slider').value = savedVol;
+                bgm.volume = savedVol / 100;
+                bgm.play().catch(e => {});
+            }
+        }
+
+        function backToTitle() {
+            toggleSidebar(false);
+            document.getElementById('main-screen').classList.remove('active');
+            document.getElementById('sidebar-trigger').style.display = 'none';
+            document.getElementById('loading-screen').classList.add('active');
+            localStorage.setItem('tofu_returning_title', 'true');
+            localStorage.removeItem('tofu_current_slot');
+            if(bgm) bgm.pause();
+
+            setTimeout(() => {
+                localStorage.removeItem('tofu_returning_title');
+                document.getElementById('loading-screen').classList.remove('active');
+                document.getElementById('save-screen').classList.add('active');
+                updateSlotVisuals();
+            }, 4800);
+        }
+
+        function clickMeter() {
+            let totalPct = calcTotalDisplay(gameData);
+            let trueEnd = isAll102(gameData);
+
+            if (trueEnd && !gameData.seenTrueEnd) {
+                gameData.seenTrueEnd = true;
+                gameData.seenNormalEnd = true;
+                localStorage.setItem(`tofu_save_${chosenSlot}`, JSON.stringify(gameData));
+                showCreditsRoll("Thank you for tofuing!");
+            } else if (totalPct >= 100 && !trueEnd && !gameData.seenNormalEnd) {
+                gameData.seenNormalEnd = true;
+                localStorage.setItem(`tofu_save_${chosenSlot}`, JSON.stringify(gameData));
+                showCreditsRoll("Thank you for playing!");
+            }
+        }
+
+        function showCreditsRoll(endingLine) {
+            document.getElementById('credits-content').innerHTML = `
+                <h2>とうふ</h2>
+                <p>- Tofu Complete Collection -</p>
+                <br>
+                <p>企画・プログラム・BGM<br><strong>Tofu Developer</strong></p>
+                <br>
+                <p>収録作品<br>
+                1. 豆（腐）知識<br>
+                2. Tough Tofu<br>
+                3. 不壊豆腐<br>
+                4. TFM<br>
+                5. 〜豆腐づくりとはリズムである〜</p>
+                <br>
+                <p>使用音源・効果音<br>
+                効果音ラボ ／ ポケットサウンド ／ 自作音源</p>
+                <br><br>
+                <h2>${endingLine}</h2>
+            `;
+            document.getElementById('credits-screen').classList.add('active');
+        }
+
+        function closeCredits() {
+            document.getElementById('credits-screen').classList.remove('active');
+        }
+        window.onload = function() {
+            if (localStorage.getItem('tofu_returning_title')) {
+                document.getElementById('save-screen').classList.remove('active');
+                document.getElementById('loading-screen').classList.add('active');
+                setTimeout(() => {
+                    localStorage.removeItem('tofu_returning_title');
+                    document.getElementById('loading-screen').classList.remove('active');
+                    document.getElementById('save-screen').classList.add('active');
+                    updateSlotVisuals();
+                }, 4800);
+                return;
+            }
+
+            let loadingSlot = localStorage.getItem('tofu_loading_slot');
+            if (loadingSlot) {
+                let data = localStorage.getItem(`tofu_save_${loadingSlot}`);
+                if (data) {
+                    chosenSlot = parseInt(loadingSlot);
+                    gameData = JSON.parse(data);
+                    document.getElementById('save-screen').classList.remove('active');
+                    document.getElementById('loading-screen').classList.add('active');
+                    setTimeout(() => {
+                        localStorage.removeItem('tofu_loading_slot');
+                        localStorage.setItem('tofu_current_slot', chosenSlot);
+                        document.getElementById('loading-screen').classList.remove('active');
+                        document.getElementById('main-screen').classList.add('active');
+                        document.getElementById('sidebar-trigger').style.display = 'flex';
+                        initMainScreen();
+                        playBGM();
+                    }, 4800);
+                    return;
+                }
+            }
+
+            let activeSlot = localStorage.getItem('tofu_current_slot');
+            if (activeSlot) {
+                let data = localStorage.getItem(`tofu_save_${activeSlot}`);
+                if (data) {
+                    chosenSlot = parseInt(activeSlot);
+                    gameData = JSON.parse(data);
+                    document.getElementById('save-screen').classList.remove('active');
+                    document.getElementById('main-screen').classList.add('active');
+                    document.getElementById('sidebar-trigger').style.display = 'flex';
+                    initMainScreen();
+                    playBGM();
+                    return;
+                }
+            }
+            updateSlotVisuals();
+        }
+    </script>
+</body>
+</html>
