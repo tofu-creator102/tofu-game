@@ -2663,31 +2663,8 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                     { off: 10.0, kind: 'hold', isGold: false }
                 )
             };
-        } else if (type === 4) {
-            // 4：（ぽぽぽぽ×16）→ ピッピッピッピ → ポポポポ×16（16連打ち×1ブロック＝合計2ブロック配置で×2セット！）
-            let cues = new Array();
-            let hits = new Array();
-            for (let k = 0; k < 16; k++) {
-                cues.push({ off: 1.0 + k * 0.5, kind: 'popo' });
-            }
-            cues.push({ off: 9.0,  kind: 'pip', num: 1, hz: 987.77 });
-            cues.push({ off: 10.0, kind: 'pip', num: 2, hz: 987.77 });
-            cues.push({ off: 11.0, kind: 'pip', num: 3, hz: 987.77 });
-            cues.push({ off: 12.0, kind: 'pip', num: 4, hz: 1318.51 });
-            for (let k = 0; k < 16; k++) {
-                hits.push({ off: 13.0 + k * 0.5, kind: 'rapid', isGold: false });
-            }
-            return {
-                len: 22.0,
-                tubEnterBeat: 0.0,
-                tubHoldLeftEnd: 8.8,
-                tubArriveRightBeat: 12.6,
-                tubLeaveBeat: 21.2,
-                cues: cues,
-                hits: hits
-            };
         } else {
-            // 5：（1・2・3・4・ぽちゃん）→ ウン・ウン・ウン・ウン・ポン！ ← 4拍あけ決め
+            // 4：（1・2・3・4・ぽちゃん）→ ウン・ウン・ウン・ウン・ポン！ ← ラストの4拍あけ決め
             return {
                 len: 12.0,
                 tubEnterBeat: 0.0,
@@ -2718,7 +2695,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         Object.assign({ label: "3：（ぽちゃ×2・ボッチャン）→ 1・2・3・4 → ポン・ポン・ぽっちゃん[長押し]！" }, makeNigariBlock(3))
     );
 
-    // 本番構成：全184拍（BPM122で約1分30秒のボリューム！）
+    // 本番構成：全184拍（BPM122で約1分30秒・16連打なしの本格コール＆レスポンス）
     const PROD_BLOCKS = new Array(
         makeNigariBlock(1),
         makeNigariBlock(1),
@@ -2726,13 +2703,15 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         makeNigariBlock(3),
         makeNigariBlock(1),
         makeNigariBlock(2),
-        makeNigariBlock(4),       // 16連打ち（1回目）
-        makeNigariBlock(4),       // 16連打ち（2回目）
+        makeNigariBlock(3),
+        makeNigariBlock(2),
+        makeNigariBlock(1),
+        makeNigariBlock(3),
         makeNigariBlock(2),
         makeNigariBlock(3),
         makeNigariBlock(1),
         makeNigariBlock(3),
-        makeNigariBlock(5, true)  // ラストの決め：（1・2・3・4・ぽちゃん）ウン・ウン・ウン・ウン・ポン！
+        makeNigariBlock(4, true)  // ラストの決め：（1・2・3・4・ぽちゃん）ウン・ウン・ウン・ウン・ポン！
     );
 
     const WA_BASS = new Array(
@@ -3701,8 +3680,8 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(0, 395); ctx.lineTo(940, 395); ctx.stroke();
 
-        // 中央のバトンタッチ「1, 2, 3, 4」ランプ表示
-        if (countLampTimer > 0 && countLampNum > 0) {
+        // 中央のバトンタッチ「1, 2, 3, 4」ランプ表示（練習中のみ表示・本番は音だけを頼りに打つ！）
+        if (phase === 'practice' && countLampTimer > 0 && countLampNum > 0) {
             ctx.save();
             let pop = 1.0 + Math.sin((countLampTimer / 0.42) * Math.PI) * 0.22;
             ctx.translate(470, 210);
