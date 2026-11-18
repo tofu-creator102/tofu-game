@@ -3199,12 +3199,13 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             if (rp.r >= rp.maxR) ripples.splice(i, 1);
         }
 
-        for (let i = eyeSplashes.length - 1; i >= 0; i--) {
-            let rp = eyeSplashes[i];
+        for (let i = eyecatchRipples.length - 1; i >= 0; i--) {
+            let rp = eyecatchRipples[i];
             rp.r += dt * 95;
             rp.alpha = Math.max(0, 1 - (rp.r / rp.maxR));
-            if (rp.r >= rp.maxR) eyeSplashes.splice(i, 1);
+            if (rp.r >= rp.maxR) eyecatchRipples.splice(i, 1);
         }
+
 
         for (let i = drops.length - 1; i >= 0; i--) {
             let dr = drops[i];
