@@ -347,6 +347,9 @@ let targetSlot = (typeof currentSlot !== 'undefined') ? currentSlot
 clearLinkedGameData(targetSlot);
 
         function goToGame(url) {
+            if (typeof currentSlot !== 'undefined') localStorage.setItem('tofu_current_slot', currentSlot);
+            if (typeof selectedSlot !== 'undefined') localStorage.setItem('tofu_current_slot', selectedSlot);
+
             if(bgm) bgm.pause();
             document.getElementById('main-screen').classList.remove('active');
             document.getElementById('sidebar-trigger').style.display = 'none';
