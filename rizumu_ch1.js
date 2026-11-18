@@ -3494,7 +3494,102 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         }
         ctx.restore();
     }
-        if (phase === 'res_step1' || phase === 'res_step2' || phase === 'res_step3' || phase === 'res_card') {
+    window.RIZUMU_GAMES["1-3"].draw = function(ctx, canvas) {
+        ctx.save();
+        ctx.scale(canvas.width / 940, canvas.height / 520);
+        ctx.clearRect(0, 0, 940, 520);
+
+        // ★ 1. アイキャッチ画面（上部に静止ロゴ＋真ん中に豆乳桶＋最後にがり雫がぽちゃん！）
+        if (phase === 'eyecatch') {
+            ctx.fillStyle = "#484848";
+            ctx.fillRect(0, 0, 940, 520);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
+            for (let y = 0; y < 520; y += 6) {
+                ctx.fillRect(0, y, 940, 2);
+            }
+
+            // 上部の『はたらくまんじゅう』風静止ロゴ「にがり打ち」
+            ctx.save();
+            ctx.translate(470, 128);
+            ctx.scale(0.84, 0.84);
+
+            ctx.strokeStyle = "#b0b0b0";
+            ctx.lineWidth = 14;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(-250, -35);
+            ctx.bezierCurveTo(-130, -90, -20, 45, 95, -40);
+            ctx.bezierCurveTo(175, -95, 235, 30, 265, -25);
+            ctx.stroke();
+
+            ctx.strokeStyle = "#efefef";
+            ctx.lineWidth = 12;
+            ctx.beginPath();
+            ctx.moveTo(-235, 42);
+            ctx.bezierCurveTo(-110, 15, 10, 95, 125, 25);
+            ctx.bezierCurveTo(195, -15, 240, 65, 275, 40);
+            ctx.stroke();
+
+            const chars = new Array(
+                { ch: "に", x: -185, y: 8,  col: "#f5f5f5", size: 84 },
+                { ch: "が", x: -92,  y: 14, col: "#bdbdbd", size: 82 },
+                { ch: "り", x: -2,   y: 6,  col: "#f5f5f5", size: 86 },
+                { ch: "打", x: 92,   y: 12, col: "#bdbdbd", size: 84 },
+                { ch: "ち", x: 185,  y: 8,  col: "#f5f5f5", size: 84 }
+            );
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            chars.forEach(item => {
+                ctx.font = `900 ${item.size}px 'Hiragino Maru Gothic ProN', 'Hiragino Kaku Gothic ProN', sans-serif`;
+                ctx.lineWidth = 10;
+                ctx.strokeStyle = "#333333";
+                ctx.strokeText(item.ch, item.x, item.y);
+                ctx.fillStyle = item.col;
+                ctx.fillText(item.ch, item.x, item.y);
+            });
+            ctx.restore();
+
+            // 真ん中に豆乳の桶
+            drawSoyMilkTub(ctx, 470, 345, eyecatchRipples.map(r => ({ localX: 0, r: r.r, alpha: r.alpha, color: "#4fc3f7" })), 1.15);
+
+            // ジングル終了後（1.05〜1.45秒）に上からにがり雫が落ちてきて「ぽちゃん！」
+            if (stateTimer >= 1.05 && stateTimer < 1.45) {
+                let fallT = (stateTimer - 1.05) / 0.40;
+                let dropY = 215 + fallT * fallT * 130;
+                ctx.save();
+                ctx.fillStyle = "#4fc3f7";
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(470, dropY - 14);
+                ctx.quadraticCurveTo(482, dropY + 4, 470, dropY + 12);
+                ctx.quadraticCurveTo(458, dropY + 4, 470, dropY - 14);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+                ctx.restore();
+            }
+
+            // 着水と同時に右下に「[m]でポーズ」がゆっくり現れる
+            if (stateTimer >= 1.45) {
+                let fadeAlpha = Math.min(1, (stateTimer - 1.45) / 0.85);
+                ctx.save();
+                ctx.globalAlpha = fadeAlpha;
+                ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+                ctx.strokeStyle = "#333333";
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.roundRect(755, 466, 162, 36, 18); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = "#333333";
+                ctx.font = "bold 15px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("[m]でポーズ", 836, 489);
+                ctx.restore();
+            }
+
+            ctx.restore();
+            return;
+        }
+
+    if (phase === 'res_step1' || phase === 'res_step2' || phase === 'res_step3' || phase === 'res_card') {
             ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0, 0, 940, 520);
 
             if (phase === 'res_step1' || phase === 'res_step2' || phase === 'res_step3') {
