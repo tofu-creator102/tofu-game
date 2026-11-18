@@ -2432,13 +2432,12 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             let seVol  = getSeVol();
 
             if (type === 'jingle') {
-                // はたらくまんじゅう風の軽快で少し不思議な和風ポップジングル
                 const seq = new Array(
                     { t: 0.00, d: 0.11, f: new Array(392.00, 783.99) },
                     { t: 0.12, d: 0.11, f: new Array(440.00, 880.00) },
                     { t: 0.24, d: 0.11, f: new Array(523.25, 1046.50) },
                     { t: 0.38, d: 0.14, f: new Array(493.88, 987.77) },
-                    { t: 0.54, d: 0.55, f: new Array(293.66, 440.00, 587.33, 880.00) }
+                    { t: 0.54, d: 0.50, f: new Array(293.66, 440.00, 587.33, 880.00) }
                 );
                 seq.forEach(s => s.f.forEach((hz, i) => {
                     let o = audioCtx.createOscillator(), g = audioCtx.createGain();
@@ -2467,8 +2466,19 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                 return;
             }
 
+            if (type === 'pass_pip') {
+                // バトンタッチの「ピッ・ピッ・ピッ・ピッ（1, 2, 3, 4）」合図音
+                let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.type = 'sine';
+                o.frequency.setValueAtTime(freq || 1046.50, now);
+                g.gain.setValueAtTime(0.15 * seVol, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+                o.connect(g); g.connect(dest);
+                o.start(now); o.stop(now + 0.085);
+                return;
+            }
+
             if (type === 'voice_count') {
-                // ラスト前の「1・2・3・4」掛け声風シンセ音
                 let o = audioCtx.createOscillator(), g = audioCtx.createGain();
                 o.type = 'triangle';
                 o.frequency.setValueAtTime(freq, now);
@@ -2513,31 +2523,27 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             }
             let o = audioCtx.createOscillator(), g = audioCtx.createGain();
             if (type === 'cue_pocha') {
-                // 豆乳が注がれる音（ぽちゃ）
                 o.type = 'sine';
-                o.frequency.setValueAtTime(340, now);
-                o.frequency.exponentialRampToValueAtTime(520, now + 0.07);
-                g.gain.setValueAtTime(0.15 * seVol, now);
+                o.frequency.setValueAtTime(360, now);
+                o.frequency.exponentialRampToValueAtTime(540, now + 0.07);
+                g.gain.setValueAtTime(0.16 * seVol, now);
                 g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
                 o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.10);
             } else if (type === 'cue_bocchan') {
-                // 長押し合図の大きな豆乳音（ボッチャン！）
                 o.type = 'triangle';
                 o.frequency.setValueAtTime(240, now);
-                o.frequency.exponentialRampToValueAtTime(480, now + 0.14);
-                g.gain.setValueAtTime(0.19 * seVol, now);
-                g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-                o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.19);
+                o.frequency.exponentialRampToValueAtTime(480, now + 0.15);
+                g.gain.setValueAtTime(0.20 * seVol, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+                o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.20);
             } else if (type === 'cue_popo') {
-                // 16連打ち用の軽快な豆乳音（ぽ）
                 o.type = 'sine';
-                o.frequency.setValueAtTime(420, now);
-                o.frequency.exponentialRampToValueAtTime(620, now + 0.045);
-                g.gain.setValueAtTime(0.13 * seVol, now);
+                o.frequency.setValueAtTime(440, now);
+                o.frequency.exponentialRampToValueAtTime(640, now + 0.045);
+                g.gain.setValueAtTime(0.14 * seVol, now);
                 g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
                 o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.07);
             } else if (type === 'hit_pon') {
-                // 裏拍でにがりを打つ音（ポン！）
                 o.type = 'sine';
                 o.frequency.setValueAtTime(freq || 783.99, now);
                 o.frequency.exponentialRampToValueAtTime((freq || 783.99) * 1.35, now + 0.08);
@@ -2545,7 +2551,6 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                 g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
                 o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.13);
             } else if (type === 'hit_pocchan_hold') {
-                // 長押しでにがりをたっぷり注ぎ始めた音（ぽっ…）
                 o.type = 'triangle';
                 o.frequency.setValueAtTime(587.33, now);
                 o.frequency.linearRampToValueAtTime(783.99, now + 0.25);
@@ -2553,7 +2558,6 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                 g.gain.exponentialRampToValueAtTime(0.001, now + 0.30);
                 o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.32);
             } else if (type === 'hit_pocchan_end') {
-                // 長押し完了の弾ける水滴音（…ちゃん！）
                 new Array(880.00, 1174.66).forEach((hz, idx) => {
                     let oh = audioCtx.createOscillator(), gh = audioCtx.createGain();
                     oh.type = 'sine';
@@ -2585,123 +2589,152 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             }
         } catch (e) {}
     }
-    const BPM = 120;
+    const BPM = 122;
     const BEAT_SEC = 60 / BPM;
-    const HOLD_MIN_SEC = 0.24; // 長押し判定の最小時間（約0.5拍）
+    const HOLD_MIN_SEC = 0.24;
 
     function makeNigariBlock(type, isGoldFinal = false) {
         if (type === 1) {
-            // 1：（ぽちゃ・ぽちゃ・ぽちゃ）ポン・ポン・ポン ← 裏拍3連
+            // 1：（ぽちゃ・ぽちゃ・ぽちゃ）→ ピッピッピッピ(1,2,3,4) → ポン・ポン・ポン！
             return {
-                len: 6.0,
+                len: 12.0,
+                tubEnterBeat: 0.0,
+                tubHoldLeftEnd: 3.5,
+                tubArriveRightBeat: 7.5,
+                tubLeaveBeat: 11.2,
                 cues: new Array(
                     { off: 1.0, kind: 'pocha' },
                     { off: 2.0, kind: 'pocha' },
-                    { off: 3.0, kind: 'pocha' }
+                    { off: 3.0, kind: 'pocha' },
+                    { off: 4.0, kind: 'pip', num: 1, hz: 987.77 },
+                    { off: 5.0, kind: 'pip', num: 2, hz: 987.77 },
+                    { off: 6.0, kind: 'pip', num: 3, hz: 987.77 },
+                    { off: 7.0, kind: 'pip', num: 4, hz: 1318.51 }
                 ),
                 hits: new Array(
-                    { off: 1.5, kind: 'tap',  isGold: false },
-                    { off: 2.5, kind: 'tap',  isGold: false },
-                    { off: 3.5, kind: 'tap',  isGold: false }
+                    { off: 8.0,  kind: 'tap', isGold: false },
+                    { off: 9.0,  kind: 'tap', isGold: false },
+                    { off: 10.0, kind: 'tap', isGold: false }
                 )
             };
         } else if (type === 2) {
-            // 2：（ぽちゃん・[休み]・ぽちゃ・ぽちゃ）ポン・ウン・ポン・ポン ← 1連＋1拍あけ2連
+            // 2：（ぽちゃん・[休み]・ぽちゃ・ぽちゃ）→ ピッピッピッピ → ポン・ウン・ポン・ポン！
             return {
-                len: 6.0,
+                len: 13.0,
+                tubEnterBeat: 0.0,
+                tubHoldLeftEnd: 4.5,
+                tubArriveRightBeat: 8.5,
+                tubLeaveBeat: 12.2,
                 cues: new Array(
                     { off: 1.0, kind: 'pocha' },
                     { off: 3.0, kind: 'pocha' },
-                    { off: 4.0, kind: 'pocha' }
+                    { off: 4.0, kind: 'pocha' },
+                    { off: 5.0, kind: 'pip', num: 1, hz: 987.77 },
+                    { off: 6.0, kind: 'pip', num: 2, hz: 987.77 },
+                    { off: 7.0, kind: 'pip', num: 3, hz: 987.77 },
+                    { off: 8.0, kind: 'pip', num: 4, hz: 1318.51 }
                 ),
                 hits: new Array(
-                    { off: 1.5, kind: 'tap',  isGold: false },
-                    { off: 3.5, kind: 'tap',  isGold: false },
-                    { off: 4.5, kind: 'tap',  isGold: false }
+                    { off: 9.0,  kind: 'tap', isGold: false },
+                    { off: 11.0, kind: 'tap', isGold: false },
+                    { off: 12.0, kind: 'tap', isGold: false }
                 )
             };
         } else if (type === 3) {
-            // 3：（ぽちゃ・ぽちゃ・ボッチャン）ポン・ポン・ぽっちゃん ← 2連後長押し
+            // 3：（ぽちゃ・ぽちゃ・ボッチャン）→ ピッピッピッピ → ポン・ポン・ぽっちゃん[長押し]！
             return {
-                len: 6.0,
+                len: 12.0,
+                tubEnterBeat: 0.0,
+                tubHoldLeftEnd: 3.5,
+                tubArriveRightBeat: 7.5,
+                tubLeaveBeat: 11.2,
                 cues: new Array(
                     { off: 1.0, kind: 'pocha' },
                     { off: 2.0, kind: 'pocha' },
-                    { off: 3.0, kind: 'bocchan' }
+                    { off: 3.0, kind: 'bocchan' },
+                    { off: 4.0, kind: 'pip', num: 1, hz: 987.77 },
+                    { off: 5.0, kind: 'pip', num: 2, hz: 987.77 },
+                    { off: 6.0, kind: 'pip', num: 3, hz: 987.77 },
+                    { off: 7.0, kind: 'pip', num: 4, hz: 1318.51 }
                 ),
                 hits: new Array(
-                    { off: 1.5, kind: 'tap',  isGold: false },
-                    { off: 2.5, kind: 'tap',  isGold: false },
-                    { off: 3.5, kind: 'hold', isGold: false }
+                    { off: 8.0,  kind: 'tap',  isGold: false },
+                    { off: 9.0,  kind: 'tap',  isGold: false },
+                    { off: 10.0, kind: 'hold', isGold: false }
                 )
             };
         } else if (type === 4) {
-            // 4：（ぽぽぽぽ×16 ×2）ポポポポ×16 ×2 ← 本番限定16連打ち×2セット（0.5拍ごとの裏拍連打）
+            // 4：（ぽぽぽぽ×16）→ ピッピッピッピ → ポポポポ×16（16連打ち×1ブロック＝合計2ブロック配置で×2セット！）
             let cues = new Array();
             let hits = new Array();
-            // 1セット目（16連）
             for (let k = 0; k < 16; k++) {
-                let b = 1.0 + k * 0.5;
-                cues.push({ off: b, kind: 'popo' });
-                hits.push({ off: b + 0.25, kind: 'rapid', isGold: false });
+                cues.push({ off: 1.0 + k * 0.5, kind: 'popo' });
             }
-            // 2セット目（1拍あけて16連）
+            cues.push({ off: 9.0,  kind: 'pip', num: 1, hz: 987.77 });
+            cues.push({ off: 10.0, kind: 'pip', num: 2, hz: 987.77 });
+            cues.push({ off: 11.0, kind: 'pip', num: 3, hz: 987.77 });
+            cues.push({ off: 12.0, kind: 'pip', num: 4, hz: 1318.51 });
             for (let k = 0; k < 16; k++) {
-                let b = 10.0 + k * 0.5;
-                cues.push({ off: b, kind: 'popo' });
-                hits.push({ off: b + 0.25, kind: 'rapid', isGold: false });
+                hits.push({ off: 13.0 + k * 0.5, kind: 'rapid', isGold: false });
             }
             return {
-                len: 20.0,
+                len: 22.0,
+                tubEnterBeat: 0.0,
+                tubHoldLeftEnd: 8.8,
+                tubArriveRightBeat: 12.6,
+                tubLeaveBeat: 21.2,
                 cues: cues,
                 hits: hits
             };
         } else {
-            // 5：（1・2・3・4・ぽちゃん）ウン・ウン・ウン・ウン・ポン ← 4拍あけ決め
+            // 5：（1・2・3・4・ぽちゃん）→ ウン・ウン・ウン・ウン・ポン！ ← 4拍あけ決め
             return {
-                len: 8.0,
+                len: 12.0,
+                tubEnterBeat: 0.0,
+                tubHoldLeftEnd: 5.3,
+                tubArriveRightBeat: 6.2,
+                tubLeaveBeat: 11.4,
                 cues: new Array(
-                    { off: 1.0, kind: 'count', hz: 392.00 },
-                    { off: 2.0, kind: 'count', hz: 440.00 },
-                    { off: 3.0, kind: 'count', hz: 493.88 },
-                    { off: 4.0, kind: 'count', hz: 523.25 },
-                    { off: 5.0, kind: 'pocha' }
+                    { off: 1.0, kind: 'count', num: 1, hz: 392.00 },
+                    { off: 2.0, kind: 'count', num: 2, hz: 440.00 },
+                    { off: 3.0, kind: 'count', num: 3, hz: 493.88 },
+                    { off: 4.0, kind: 'count', num: 4, hz: 523.25 },
+                    { off: 5.0, kind: 'pocha' },
+                    { off: 6.0, kind: 'count_silent', num: 1 },
+                    { off: 7.0, kind: 'count_silent', num: 2 },
+                    { off: 8.0, kind: 'count_silent', num: 3 },
+                    { off: 9.0, kind: 'count_silent', num: 4 }
                 ),
                 hits: new Array(
-                    { off: 5.5, kind: 'tap', isGold: isGoldFinal }
+                    { off: 10.0, kind: 'tap', isGold: isGoldFinal }
                 )
             };
         }
     }
 
     const PRACTICE_MODES = new Array(
-        Object.assign({ label: "1：（ぽちゃ×3）裏拍で ポン・ポン・ポン！" }, makeNigariBlock(1)),
-        Object.assign({ label: "2：（ぽちゃん・ぽちゃ×2）ポン・ウン・ポン・ポン！" }, makeNigariBlock(2)),
-        Object.assign({ label: "3：（ぽちゃ×2・ボッチャン）ポン・ポン・ぽっちゃん[長押し]！" }, makeNigariBlock(3))
+        Object.assign({ label: "1：（ぽちゃ×3）→ 1・2・3・4 → ポン・ポン・ポン！" }, makeNigariBlock(1)),
+        Object.assign({ label: "2：（ぽちゃん・ぽちゃ×2）→ 1・2・3・4 → ポン・ウン・ポン・ポン！" }, makeNigariBlock(2)),
+        Object.assign({ label: "3：（ぽちゃ×2・ボッチャン）→ 1・2・3・4 → ポン・ポン・ぽっちゃん[長押し]！" }, makeNigariBlock(3))
     );
 
-    // 本番構成：全184拍（BPM120で約1分32秒のボリューム！）
+    // 本番構成：全184拍（BPM122で約1分30秒のボリューム！）
     const PROD_BLOCKS = new Array(
         makeNigariBlock(1),
         makeNigariBlock(1),
         makeNigariBlock(2),
-        makeNigariBlock(2),
         makeNigariBlock(3),
         makeNigariBlock(1),
         makeNigariBlock(2),
+        makeNigariBlock(4),       // 16連打ち（1回目）
+        makeNigariBlock(4),       // 16連打ち（2回目）
+        makeNigariBlock(2),
         makeNigariBlock(3),
-        makeNigariBlock(4),        // 中盤の山場：16連打ち×2セット！
         makeNigariBlock(1),
-        makeNigariBlock(2),
         makeNigariBlock(3),
-        makeNigariBlock(2),
-        makeNigariBlock(3),
-        makeNigariBlock(4),        // 終盤の山場：16連打ち×2セット！
-        makeNigariBlock(3),
-        makeNigariBlock(5, true)   // ラストの決め：（1・2・3・4・ぽちゃん）ウンウンウンウンポン！
+        makeNigariBlock(5, true)  // ラストの決め：（1・2・3・4・ぽちゃん）ウン・ウン・ウン・ウン・ポン！
     );
 
-    // 和風グルーヴのベースライン（ニロ抜きヨナ抜き音階）
     const WA_BASS = new Array(
         146.83, 146.83, 174.61, 196.00,
         220.00, 196.00, 174.61, 130.81
@@ -2722,6 +2755,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
     let prodIdx = 0;
     let blockStartBeat = 0;
     let blockEndBeat = 0;
+    let currentBlockObj = null;
 
     let totalNotesCount = 0;
     let successNotesCount = 0;
@@ -2744,11 +2778,37 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
     let holdStartSec = 0;
     let activeHoldHit = null;
 
-    let ladleTilt = 0;     // 左側の豆乳柄杓の傾き
-    let bottleDrop = 0;    // 右側のにがり小瓶の押し下げ
-    let eyecatchPoseShown = false;
+    let senpaiLadleTilt = 0; // 左側：先輩の豆乳杓子
+    let playerLadleTilt = 0; // 右側：自分のにがり杓子
+    let countLampNum = 0;    // 中央の「1, 2, 3, 4」ランプ表示
+    let countLampTimer = 0;
+
+    let eyecatchDropPlayed = false;
+    let eyecatchRipples = new Array();
     let pcOn = false;
     let pcBounce = 0;
+
+    function getCurrentTubX(curBeat) {
+        if (!currentBlockObj) return 470;
+        let rel = curBeat - blockStartBeat;
+        let b = currentBlockObj;
+        // 左外(-180) -> 先輩の前(250) -> 自分の前(690) -> 右外(1120)
+        if (rel < b.tubEnterBeat + 0.8) {
+            let t = Math.max(0, Math.min(1, (rel - b.tubEnterBeat) / 0.8));
+            let ease = 1 - Math.pow(1 - t, 3);
+            return -180 + ease * 430;
+        } else if (rel <= b.tubHoldLeftEnd) {
+            return 250;
+        } else if (rel < b.tubArriveRightBeat) {
+            let t = (rel - b.tubHoldLeftEnd) / (b.tubArriveRightBeat - b.tubHoldLeftEnd);
+            return 250 + t * 440;
+        } else if (rel <= b.tubLeaveBeat) {
+            return 690;
+        } else {
+            let t = Math.min(1, (rel - b.tubLeaveBeat) / 0.8);
+            return 690 + t * t * 430;
+        }
+    }
 
     function togglePause() {
         if (phase !== 'practice' && phase !== 'prod') return;
@@ -2787,26 +2847,28 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         }
     }
 
-    function spawnRipple(x, y, col, maxR) {
-        ripples.push({ x: x, y: y, r: 8, maxR: maxR, alpha: 0.9, color: col });
+    function spawnRipple(localX, col, maxR) {
+        // localX: 桶の中心からの相対X座標
+        ripples.push({ localX: localX, r: 8, maxR: maxR, alpha: 0.9, color: col });
     }
 
     function spawnDrop(x, y, isGold, big = false) {
         drops.push({
             x: x, y: y,
-            vy: 420,
-            targetY: 315,
+            vy: 460,
+            targetY: 325,
             isGold: isGold,
-            big: big,
-            done: false
+            big: big
         });
     }
 
     function queueBlock(startBeat, blk) {
+        currentBlockObj = blk;
         blk.cues.forEach(c => {
             allCues.push({
                 beat: startBeat + c.off,
                 kind: c.kind,
+                num: c.num || 0,
                 hz: c.hz || 440,
                 played: false
             });
@@ -2814,9 +2876,9 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         blk.hits.forEach(h => {
             allHits.push({
                 targetBeat: startBeat + h.off,
-                kind: h.kind, // 'tap' | 'hold' | 'rapid'
+                kind: h.kind,
                 isGold: !!h.isGold,
-                state: 'pending', // 'pending' | 'holding' | 'done' | 'missed'
+                state: 'pending',
                 isPerf: false,
                 demoReleaseBeat: 0
             });
@@ -2829,6 +2891,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         pracClearWait = false;
         isHoldingKey = false;
         activeHoldHit = null;
+        countLampNum = 0;
         allCues = new Array();
         allHits = new Array();
         lastBeatInt = -1;
@@ -2863,6 +2926,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         lastBeatInt = -1;
         allCues = new Array();
         allHits = new Array();
+        countLampNum = 0;
         pcOn = true;
 
         totalNotesCount = 0;
@@ -2906,16 +2970,16 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         if (h.state === 'holding') {
             if (dur >= HOLD_MIN_SEC) {
                 h.state = 'done';
+                playerLadleTilt = 1.3;
                 playTone('hit_pocchan_end');
-                spawnDrop(540, 210, h.isGold, true);
-                spawnRipple(540, 315, "#81d4fa", 95);
+                spawnDrop(690, 225, h.isGold, true);
+                spawnRipple(0, "#81d4fa", 95);
                 if (phase === 'prod') {
                     totalNotesCount++;
                     successNotesCount++;
                     if (h.isPerf) { perfectNotesCount++; pcBounce = 1.0; }
                 }
             } else {
-                // 長押しが短すぎて「ぽっちゃん」にならなかった（ミス）
                 h.state = 'missed';
                 playTone('miss');
                 if (phase === 'prod') {
@@ -2941,8 +3005,12 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             isDemoMode = false;
             isHoldingKey = false;
             activeHoldHit = null;
-            ladleTilt = 0;
-            bottleDrop = 0;
+            senpaiLadleTilt = 0;
+            playerLadleTilt = 0;
+            countLampNum = 0;
+            countLampTimer = 0;
+            eyecatchDropPlayed = false;
+            eyecatchRipples = new Array();
             pcOn = false;
             pcBounce = 0;
             ripples = new Array();
@@ -3071,7 +3139,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
 
             let nowSec = performance.now() / 1000;
             let curBeat = (nowSec - modeStartTime) / BEAT_SEC;
-            bottleDrop = 1.0;
+            playerLadleTilt = 1.0;
 
             let best = null, minDiff = 999;
             allHits.forEach(h => {
@@ -3081,27 +3149,24 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                 }
             });
 
-            // 16連打ち時は判定窓を少しタイトに、通常時は広めに設定
-            let maxWin = (best && best.kind === 'rapid') ? 0.24 : 0.35;
+            let maxWin = (best && best.kind === 'rapid') ? 0.25 : 0.36;
 
             if (best && minDiff <= maxWin) {
-                let isPerf = (minDiff <= 0.14);
+                let isPerf = (minDiff <= 0.15);
                 if (best.kind === 'hold') {
-                    // 長押しノーツの開始（ぽっ…）
                     best.state = 'holding';
                     best.isPerf = isPerf;
                     isHoldingKey = true;
                     holdStartSec = nowSec;
                     activeHoldHit = best;
                     playTone('hit_pocchan_hold');
-                    spawnDrop(540, 205, best.isGold, false);
+                    spawnDrop(690, 225, best.isGold, false);
                 } else {
-                    // 単押し（ポン！）または16連打ち（ポ！）
                     best.state = 'done';
                     let pitch = (best.kind === 'rapid') ? 987.77 : 783.99;
                     playTone('hit_pon', pitch);
-                    spawnDrop(540, 205, best.isGold, false);
-                    spawnRipple(540, 315, best.isGold ? "#ffd54f" : "#ffffff", best.kind === 'rapid' ? 42 : 70);
+                    spawnDrop(690, 225, best.isGold, false);
+                    spawnRipple(0, best.isGold ? "#ffd54f" : "#81d4fa", best.kind === 'rapid' ? 42 : 72);
                     if (phase === 'prod') {
                         totalNotesCount++;
                         successNotesCount++;
@@ -3122,15 +3187,23 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
     window.RIZUMU_GAMES["1-3"].update = function(dt) {
         if (isPaused) return;
 
-        if (ladleTilt > 0) ladleTilt = Math.max(0, ladleTilt - dt * 5.0);
-        if (bottleDrop > 0) bottleDrop = Math.max(0, bottleDrop - dt * 6.5);
+        if (senpaiLadleTilt > 0) senpaiLadleTilt = Math.max(0, senpaiLadleTilt - dt * 5.0);
+        if (playerLadleTilt > 0) playerLadleTilt = Math.max(0, playerLadleTilt - dt * 5.5);
+        if (countLampTimer > 0) countLampTimer = Math.max(0, countLampTimer - dt);
         if (pcBounce > 0) pcBounce = Math.max(0, pcBounce - dt * 4.5);
 
         for (let i = ripples.length - 1; i >= 0; i--) {
             let rp = ripples[i];
-            rp.r += dt * 110;
+            rp.r += dt * 115;
             rp.alpha = Math.max(0, 1 - (rp.r / rp.maxR));
             if (rp.r >= rp.maxR) ripples.splice(i, 1);
+        }
+
+        for (let i = eyeSplashes.length - 1; i >= 0; i--) {
+            let rp = eyeSplashes[i];
+            rp.r += dt * 95;
+            rp.alpha = Math.max(0, 1 - (rp.r / rp.maxR));
+            if (rp.r >= rp.maxR) eyeSplashes.splice(i, 1);
         }
 
         for (let i = drops.length - 1; i >= 0; i--) {
@@ -3143,6 +3216,12 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
 
         if (phase === 'eyecatch') {
             stateTimer += dt;
+            // ジングル終了後、上から落ちてきたにがり雫が中央の豆乳桶に「ぽちゃん！」と着水する瞬間（1.45秒）
+            if (!eyecatchDropPlayed && stateTimer >= 1.45) {
+                eyecatchDropPlayed = true;
+                playTone('cue_pocha');
+                eyecatchRipples.push({ r: 10, maxR: 120, alpha: 0.95 });
+            }
             if (stateTimer >= 3.6) {
                 phase = 'practice';
                 pracTypeIdx = 0;
@@ -3178,7 +3257,6 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         let nowSec = performance.now() / 1000;
         let curBeat = (nowSec - modeStartTime) / BEAT_SEC;
 
-        // 和風グルーヴ伴奏（表拍に和太鼓ドン・裏拍にベースで裏拍が取りやすい設計）
         let beatInt = Math.floor(curBeat);
         if (beatInt !== lastBeatInt && beatInt >= 0) {
             lastBeatInt = beatInt;
@@ -3193,31 +3271,40 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             }
         }
 
-        // 表拍の合図再生（豆乳が注がれる音＆ラスト前カウント）
+        // 先輩の豆乳入れ＆ピッピッピッピ（1, 2, 3, 4）合図の再生
         allCues.forEach(c => {
             if (!c.played && curBeat >= c.beat) {
                 c.played = true;
                 if (c.kind === 'pocha') {
-                    ladleTilt = 1.0;
+                    senpaiLadleTilt = 1.0;
                     playTone('cue_pocha');
-                    spawnRipple(410, 318, "#fffdf5", 65);
+                    spawnRipple(0, "#ffffff", 68);
                 } else if (c.kind === 'bocchan') {
-                    ladleTilt = 1.3;
+                    senpaiLadleTilt = 1.35;
                     playTone('cue_bocchan');
-                    spawnRipple(410, 318, "#ffe082", 105);
+                    spawnRipple(0, "#ffe082", 105);
                 } else if (c.kind === 'popo') {
-                    ladleTilt = 0.7;
+                    senpaiLadleTilt = 0.75;
                     playTone('cue_popo');
-                    spawnRipple(410, 318, "#fffdf5", 40);
+                    spawnRipple(0, "#ffffff", 42);
+                } else if (c.kind === 'pip') {
+                    playTone('pass_pip', c.hz);
+                    countLampNum = c.num;
+                    countLampTimer = 0.42;
                 } else if (c.kind === 'count') {
                     playTone('voice_count', c.hz);
+                    countLampNum = c.num;
+                    countLampTimer = 0.42;
+                } else if (c.kind === 'count_silent') {
+                    countLampNum = c.num;
+                    countLampTimer = 0.42;
                 }
             }
         });
 
-        // 長押しを一定時間（0.48秒）押し続けた場合の自動完了処理
+        // 長押し自動完了（0.46秒以上ホールド）
         if (isHoldingKey && activeHoldHit && activeHoldHit.state === 'holding') {
-            if ((nowSec - holdStartSec) >= 0.48) {
+            if ((nowSec - holdStartSec) >= 0.46) {
                 handleHoldRelease();
             }
         }
@@ -3225,30 +3312,30 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         for (let i = allHits.length - 1; i >= 0; i--) {
             let h = allHits[i];
 
-            // お手本モードの自動実演
+            // お手本モードの自動実演（右側のにがり杓子で打ち返す）
             if (phase === 'practice' && isDemoMode && h.state === 'pending' && curBeat >= h.targetBeat) {
-                bottleDrop = 1.0;
+                playerLadleTilt = 1.0;
                 if (h.kind === 'hold') {
                     h.state = 'holding';
                     h.demoReleaseBeat = h.targetBeat + 0.65;
                     playTone('hit_pocchan_hold');
-                    spawnDrop(540, 205, false, false);
+                    spawnDrop(690, 225, false, false);
                 } else {
                     h.state = 'done';
                     playTone('hit_pon', 783.99);
-                    spawnDrop(540, 205, false, false);
-                    spawnRipple(540, 315, "#ffffff", 70);
+                    spawnDrop(690, 225, false, false);
+                    spawnRipple(0, "#81d4fa", 72);
                 }
             }
             if (phase === 'practice' && isDemoMode && h.state === 'holding' && curBeat >= h.demoReleaseBeat) {
                 h.state = 'done';
+                playerLadleTilt = 1.3;
                 playTone('hit_pocchan_end');
-                spawnDrop(540, 210, false, true);
-                spawnRipple(540, 315, "#81d4fa", 95);
+                spawnDrop(690, 225, false, true);
+                spawnRipple(0, "#81d4fa", 95);
             }
 
-            // 見逃しミス判定
-            let missLimit = (h.kind === 'rapid') ? 0.25 : 0.36;
+            let missLimit = (h.kind === 'rapid') ? 0.26 : 0.36;
             if (h.state === 'pending' && curBeat > h.targetBeat + missLimit) {
                 h.state = 'missed';
                 playTone('miss');
@@ -3310,38 +3397,39 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             }
         }
     };
-    function drawSoyMilkTub(ctx, x, y, ripplesList) {
+    function drawSoyMilkTub(ctx, x, y, ripplesList, scale = 1.0) {
         ctx.save();
         ctx.translate(x, y);
+        ctx.scale(scale, scale);
 
-        // 桶の側面（木目調）
+        // 桶の側面
         ctx.fillStyle = "#c9965b";
         ctx.strokeStyle = "#5c3d1e";
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.moveTo(-210, 0);
-        ctx.lineTo(-190, 125);
-        ctx.quadraticCurveTo(0, 152, 190, 125);
-        ctx.lineTo(210, 0);
+        ctx.moveTo(-145, 0);
+        ctx.lineTo(-130, 92);
+        ctx.quadraticCurveTo(0, 114, 130, 92);
+        ctx.lineTo(145, 0);
         ctx.closePath();
         ctx.fill(); ctx.stroke();
 
-        // タガ（竹の輪）
+        // 竹のタガ
         ctx.strokeStyle = "#8c6239";
-        ctx.lineWidth = 7;
+        ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.quadraticCurveTo(-198, 46, 0, 58);
-        ctx.quadraticCurveTo(198, 46, 204, 42);
+        ctx.quadraticCurveTo(-136, 36, 0, 44);
+        ctx.quadraticCurveTo(136, 36, 140, 32);
         ctx.stroke();
 
         // 桶のフチと豆乳の表面
         ctx.fillStyle = "#e3b882";
         ctx.strokeStyle = "#5c3d1e";
         ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.ellipse(0, 0, 210, 44, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(0, 0, 145, 34, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
 
         ctx.fillStyle = "#fcfaf2";
-        ctx.beginPath(); ctx.ellipse(0, 3, 194, 36, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(0, 2, 132, 27, 0, 0, Math.PI * 2); ctx.fill();
 
         // 波紋エフェクト
         ripplesList.forEach(rp => {
@@ -3350,7 +3438,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             ctx.strokeStyle = rp.color;
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.ellipse(rp.x - x, rp.y - y, rp.r, rp.r * 0.25, 0, 0, Math.PI * 2);
+            ctx.ellipse(rp.localX || 0, 2, rp.r, rp.r * 0.25, 0, 0, Math.PI * 2);
             ctx.stroke();
             ctx.restore();
         });
@@ -3358,63 +3446,36 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         ctx.restore();
     }
 
-    function drawSoyLadle(ctx, x, y, tilt) {
+    function drawWoodenLadle(ctx, x, y, tilt, isRightSide) {
+        // isRightSide: false=左(先輩の豆乳杓子), true=右(自分のにがり杓子)
         ctx.save();
         ctx.translate(x, y);
-        ctx.rotate(tilt * 0.48);
+        if (isRightSide) {
+            ctx.scale(-1, 1);
+        }
+        ctx.rotate(tilt * 0.52);
 
         // 柄杓の持ち手
-        ctx.fillStyle = "#d4a36a";
-        ctx.strokeStyle = "#5c3d1e";
+        ctx.fillStyle = isRightSide ? "#b5d6a7" : "#d4a36a";
+        ctx.strokeStyle = isRightSide ? "#2e5932" : "#5c3d1e";
         ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.roundRect(-150, -7, 130, 14, 6); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(-145, -7, 125, 14, 6); ctx.fill(); ctx.stroke();
 
         // 柄杓のカップ
-        ctx.fillStyle = "#e6bc8a";
+        ctx.fillStyle = isRightSide ? "#cde6c3" : "#e6bc8a";
         ctx.beginPath(); ctx.roundRect(-24, -18, 48, 36, 8); ctx.fill(); ctx.stroke();
 
-        // 注がれる豆乳の筋
+        // 注がれる液体の筋（左＝白い豆乳、右＝水色のにがり）
         if (tilt > 0.15) {
-            ctx.fillStyle = "#ffffff";
+            ctx.fillStyle = isRightSide ? "#4fc3f7" : "#ffffff";
             ctx.beginPath();
             ctx.moveTo(22, 2);
-            ctx.quadraticCurveTo(56, 28, 62, 118);
-            ctx.lineTo(48, 118);
-            ctx.quadraticCurveTo(44, 34, 18, 12);
+            ctx.quadraticCurveTo(50, 26, 54, 112);
+            ctx.lineTo(42, 112);
+            ctx.quadraticCurveTo(38, 32, 18, 12);
             ctx.closePath();
             ctx.fill();
         }
-        ctx.restore();
-    }
-
-    function drawNigariBottle(ctx, x, y, dropOffset) {
-        ctx.save();
-        ctx.translate(x, y + dropOffset * 24);
-        ctx.rotate(-0.45);
-
-        // ガラス小瓶（にがり）
-        ctx.fillStyle = "rgba(225, 245, 254, 0.9)";
-        ctx.strokeStyle = "#0277bd";
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.roundRect(-22, -45, 44, 72, 12); ctx.fill(); ctx.stroke();
-
-        // 中のにがり液
-        ctx.fillStyle = "rgba(129, 212, 250, 0.65)";
-        ctx.beginPath(); ctx.roundRect(-18, -12, 36, 35, 8); ctx.fill();
-
-        // 瓶の口
-        ctx.fillStyle = "#b3e5fc";
-        ctx.fillRect(-9, 27, 18, 14);
-        ctx.strokeRect(-9, 27, 18, 14);
-
-        // ラベル
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(-15, -26, 30, 22);
-        ctx.fillStyle = "#01579b";
-        ctx.font = "bold 10px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("にがり", 0, -11);
-
         ctx.restore();
     }
 
@@ -3433,98 +3494,6 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         }
         ctx.restore();
     }
-    window.RIZUMU_GAMES["1-3"].draw = function(ctx, canvas) {
-        ctx.save();
-        ctx.scale(canvas.width / 940, canvas.height / 520);
-        ctx.clearRect(0, 0, 940, 520);
-
-        // ★ 1. 『はたらくまんじゅう』オマージュ静止アイキャッチ（動きなし・音とロゴで魅せる）
-        if (phase === 'eyecatch') {
-            // 濃いチャコールグレーの横縞テクスチャ背景
-            ctx.fillStyle = "#484848";
-            ctx.fillRect(0, 0, 940, 520);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.03)";
-            for (let y = 0; y < 520; y += 6) {
-                ctx.fillRect(0, y, 940, 2);
-            }
-
-            // 中央に「にがり打ち」の丸文字＋絡み合う白いリボンライン（完全静止）
-            ctx.save();
-            ctx.translate(470, 260);
-
-            // 背景をくねる太いリボンライン
-            ctx.strokeStyle = "#b0b0b0";
-            ctx.lineWidth = 14;
-            ctx.lineCap = "round";
-            ctx.beginPath();
-            ctx.moveTo(-250, -35);
-            ctx.bezierCurveTo(-130, -90, -20, 45, 95, -40);
-            ctx.bezierCurveTo(175, -95, 235, 30, 265, -25);
-            ctx.stroke();
-
-            ctx.strokeStyle = "#efefef";
-            ctx.lineWidth = 12;
-            ctx.beginPath();
-            ctx.moveTo(-235, 42);
-            ctx.bezierCurveTo(-110, 15, 10, 95, 125, 25);
-            ctx.bezierCurveTo(195, -15, 240, 65, 275, 40);
-            ctx.stroke();
-
-            // 白とライトグレーが交互に並ぶ丸文字「に が り 打 ち」
-            const chars = new Array(
-                { ch: "に", x: -185, y: 8,  col: "#f5f5f5", size: 84 },
-                { ch: "が", x: -92,  y: 14, col: "#bdbdbd", size: 82 },
-                { ch: "り", x: -2,   y: 6,  col: "#f5f5f5", size: 86 },
-                { ch: "打", x: 92,   y: 12, col: "#bdbdbd", size: 84 },
-                { ch: "ち", x: 185,  y: 8,  col: "#f5f5f5", size: 84 }
-            );
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            chars.forEach(item => {
-                ctx.font = `900 ${item.size}px 'Hiragino Maru Gothic ProN', 'Hiragino Kaku Gothic ProN', sans-serif`;
-                ctx.lineWidth = 10;
-                ctx.strokeStyle = "#333333";
-                ctx.strokeText(item.ch, item.x, item.y);
-                ctx.fillStyle = item.col;
-                ctx.fillText(item.ch, item.x, item.y);
-            });
-
-            // ラインの上下にちょこんと乗る可愛い豆・豆腐の顔アイコン（静止）
-            const faces = new Array({ x: -135, y: -56, r: 22 }, { x: 52, y: 66, r: 17 });
-            faces.forEach(fc => {
-                ctx.fillStyle = "#ffffff";
-                ctx.strokeStyle = "#333333";
-                ctx.lineWidth = 3;
-                ctx.beginPath(); ctx.ellipse(fc.x, fc.y, fc.r * 1.15, fc.r * 0.9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-                ctx.fillStyle = "#333333";
-                ctx.beginPath(); ctx.arc(fc.x - fc.r * 0.35, fc.y - 2, 2.5, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.arc(fc.x + fc.r * 0.35, fc.y - 2, 2.5, 0, Math.PI * 2); ctx.fill();
-                ctx.strokeStyle = "#333333";
-                ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.arc(fc.x, fc.y + 2, fc.r * 0.45, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
-            });
-
-            ctx.restore();
-
-            // 右下に「[m]でポーズ」がゆっくり現れる
-            if (stateTimer >= 1.15) {
-                let fadeAlpha = Math.min(1, (stateTimer - 1.15) / 0.85);
-                ctx.save();
-                ctx.globalAlpha = fadeAlpha;
-                ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-                ctx.strokeStyle = "#333333";
-                ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.roundRect(755, 466, 162, 36, 18); ctx.fill(); ctx.stroke();
-                ctx.fillStyle = "#333333";
-                ctx.font = "bold 15px sans-serif";
-                ctx.textAlign = "center";
-                ctx.fillText("[m]でポーズ", 836, 489);
-                ctx.restore();
-            }
-
-            ctx.restore();
-            return;
-        }
         if (phase === 'res_step1' || phase === 'res_step2' || phase === 'res_step3' || phase === 'res_card') {
             ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0, 0, 940, 520);
 
@@ -3542,11 +3511,11 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                     }
                     ctx.fillStyle = "#ffffff"; ctx.font = "bold 25px sans-serif";
                     if (finalRankVal === 0) {
-                        ctx.fillText("にがりのタイミングがバラバラだ。", 250, 235);
+                        ctx.fillText("先輩のリズムをよく聞くんだ。", 250, 235);
                         ctx.fillText("これではうまく固まらないぞ。", 250, 278);
                     } else if (finalRankVal === 1) {
                         ctx.fillText("まずまずの打ち込みだったな。", 250, 225);
-                        ctx.fillText("裏拍をもっと感じてみよう。", 250, 268);
+                        ctx.fillText("息をもっと合わせてみよう。", 250, 268);
                     } else {
                         ctx.fillText("見事なにがり打ちだった！", 250, 215);
                         ctx.fillText("ぷるぷるの極上絹ごしになるぞ。", 250, 258);
@@ -3592,13 +3561,13 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             } else {
                 ctx.save(); ctx.translate(470, 230);
                 if (finalRankVal === 0) {
-                    drawNigariBottle(ctx, 0, -10, 0);
+                    drawWoodenLadle(ctx, 40, -10, 0, true);
                     ctx.strokeStyle = "#90a4ae"; ctx.lineWidth = 3;
-                    ctx.beginPath(); ctx.moveTo(-40, 40); ctx.lineTo(40, 40); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(-45, 40); ctx.lineTo(45, 40); ctx.stroke();
                 } else if (finalRankVal === 1) {
-                    drawSoyMilkTub(ctx, 0, -25, new Array());
+                    drawSoyMilkTub(ctx, 0, -25, new Array(), 1.2);
                 } else {
-                    drawSoyMilkTub(ctx, 0, -25, new Array({ x: 0, y: -22, r: 95, maxR: 120, alpha: 0.9, color: "#ffd54f" }));
+                    drawSoyMilkTub(ctx, 0, -25, new Array({ localX: 0, r: 85, alpha: 0.9, color: "#ffd54f" }), 1.2);
                     ctx.strokeStyle = "#ffd54f"; ctx.lineWidth = 3;
                     for (let i = 0; i < 8; i++) {
                         let a = (i / 8) * Math.PI * 2;
@@ -3609,7 +3578,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                 ctx.restore();
 
                 ctx.fillStyle = "#ffffff"; ctx.font = "bold 30px sans-serif"; ctx.textAlign = "center";
-                let caption = (finalRankVal === 0) ? "焦らず裏拍を待つのだ。"
+                let caption = (finalRankVal === 0) ? "まずは真似から始めよう。"
                             : (finalRankVal === 1) ? "いい波紋が出てきたな。"
                             : "神業のにがり打ち！";
                 ctx.fillText(caption, 470, 365);
@@ -3620,19 +3589,48 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             ctx.restore();
             return;
         }
-        // ★ 3. プレイ画面（穏やかな和風豆腐工房）
+        // ★ 3. プレイ画面（左：先輩の豆乳杓子 ➔ 中央カウント ➔ 右：自分のにがり杓子）
         ctx.fillStyle = "#ede6d3";
-        ctx.fillRect(0, 0, 940, 350);
-        ctx.fillStyle = "#d9ceb2";
-        ctx.fillRect(0, 350, 940, 170);
+        ctx.fillRect(0, 0, 940, 370);
+        ctx.fillStyle = "#cfc4a8";
+        ctx.fillRect(0, 370, 940, 150);
 
         // 奥の隠れ豆腐パソコン
-        drawHiddenTofuPC(ctx, 470, 86, pcOn, pcBounce);
+        drawHiddenTofuPC(ctx, 470, 82, pcOn, pcBounce);
 
-        // 中央の大きな豆乳桶
-        drawSoyMilkTub(ctx, 470, 315, ripples);
+        // 桶が流れる木製レーン
+        ctx.fillStyle = "#a68b67";
+        ctx.fillRect(0, 395, 940, 26);
+        ctx.strokeStyle = "#5c3d1e";
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(0, 395); ctx.lineTo(940, 395); ctx.stroke();
 
-        // 落下中のにがり水滴
+        // 中央のバトンタッチ「1, 2, 3, 4」ランプ表示
+        if (countLampTimer > 0 && countLampNum > 0) {
+            ctx.save();
+            let pop = 1.0 + Math.sin((countLampTimer / 0.42) * Math.PI) * 0.22;
+            ctx.translate(470, 210);
+            ctx.scale(pop, pop);
+            ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = "#4a4a4a";
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(0, 0, 34, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = (countLampNum === 4) ? "#d97706" : "#4a4a4a";
+            ctx.font = "900 34px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(String(countLampNum), 0, 2);
+            ctx.restore();
+        }
+
+        // 現在時刻から桶のX座標を計算して描画
+        let effectiveNow = isPaused ? pauseStartTime : (performance.now() / 1000);
+        let curBeat = (effectiveNow - modeStartTime) / BEAT_SEC;
+        let tubX = getCurrentTubX(curBeat);
+
+        drawSoyMilkTub(ctx, tubX, 315, ripples, 1.0);
+
+        // 落下中のにがり雫
         drops.forEach(dr => {
             ctx.save();
             ctx.fillStyle = dr.isGold ? "#ffca28" : "#29b6f6";
@@ -3642,20 +3640,19 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             ctx.restore();
         });
 
-        // 左側の豆乳柄杓（表拍で傾いて豆乳を注ぐ）
-        drawSoyLadle(ctx, 355, 205, ladleTilt);
+        // 左側：先輩の豆乳杓子（x=200）
+        drawWoodenLadle(ctx, 200, 210, senpaiLadleTilt, false);
 
-        // 右側のにがり小瓶（裏拍で押し下げてにがりを打ち込む）
-        drawNigariBottle(ctx, 565, 175, bottleDrop);
-
+        // 右側：自分のにがり杓子（x=740）
+        drawWoodenLadle(ctx, 740, 210, playerLadleTilt, true);
         if (phase === 'practice') {
             ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
             ctx.strokeStyle = "#b8b2a0"; ctx.lineWidth = 2.5;
-            ctx.beginPath(); ctx.roundRect(120, 16, 635, 44, 22); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.roundRect(100, 16, 655, 44, 22); ctx.fill(); ctx.stroke();
 
-            ctx.fillStyle = "#4a4a4a"; ctx.font = "bold 14.5px sans-serif"; ctx.textAlign = "center";
+            ctx.fillStyle = "#4a4a4a"; ctx.font = "bold 14px sans-serif"; ctx.textAlign = "center";
             let statusText = isDemoMode ? "【お手本実演中】" : `成功：${pracSuccessCount} / 3`;
-            ctx.fillText(`${PRACTICE_MODES.at(pracTypeIdx).label}　${statusText}`, 437, 44);
+            ctx.fillText(`${PRACTICE_MODES.at(pracTypeIdx).label}　${statusText}`, 427, 44);
 
             // 右上：お手本 / 練習に戻るボタン
             ctx.fillStyle = isDemoMode ? "#ffb300" : "#ffffff";
