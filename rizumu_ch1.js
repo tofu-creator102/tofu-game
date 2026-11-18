@@ -3791,3 +3791,1176 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         ctx.restore();
     };
 })();
+// ==========================================
+// 4つ目のゲーム：水切りプレス (1-4)
+// ==========================================
+window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
+
+(function() {
+    let noiseBuffer = null;
+    function getNoiseBuffer() {
+        if (noiseBuffer) return noiseBuffer;
+        ensureAudio();
+        const sr = audioCtx.sampleRate;
+        const buf = audioCtx.createBuffer(1, sr * 0.25, sr);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+        noiseBuffer = buf;
+        return buf;
+    }
+
+    function playTone(type, freq = 440, dur = 0.14) {
+        try {
+            ensureAudio();
+            let dest = (typeof masterOut !== 'undefined' && masterOut) ? masterOut : audioCtx.destination;
+            let now = audioCtx.currentTime;
+            let bgmVol = getBgmVol();
+            let seVol  = getSeVol();
+
+            if (type === 'jingle') {
+                const seq = new Array(
+                    { t: 0.00, d: 0.11, f: new Array(293.66, 587.33) },
+                    { t: 0.12, d: 0.11, f: new Array(369.99, 739.99) },
+                    { t: 0.24, d: 0.11, f: new Array(440.00, 880.00) },
+                    { t: 0.38, d: 0.52, f: new Array(220.00, 440.00, 587.33, 880.00) }
+                );
+                seq.forEach(s => s.f.forEach((hz, i) => {
+                    let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.type = (i === 0) ? 'sawtooth' : 'triangle';
+                    o.frequency.setValueAtTime(hz, now + s.t);
+                    g.gain.setValueAtTime(0.001, now + s.t);
+                    g.gain.linearRampToValueAtTime((i === 0 ? 0.09 : 0.08) * seVol, now + s.t + 0.015);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + s.t + s.d);
+                    o.connect(g); g.connect(dest);
+                    o.start(now + s.t); o.stop(now + s.t + s.d + 0.02);
+                }));
+                return;
+            }
+
+            if (type === 'intro_count') {
+                new Array(293.66, 587.33).forEach((hz, i) => {
+                    let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.type = (i === 0) ? 'sine' : 'triangle';
+                    o.frequency.setValueAtTime(hz, now);
+                    g.gain.setValueAtTime(0.001, now);
+                    g.gain.linearRampToValueAtTime((i === 0 ? 0.09 : 0.07) * seVol, now + 0.01);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.10);
+                    o.connect(g); g.connect(dest);
+                    o.start(now); o.stop(now + 0.11);
+                });
+                return;
+            }
+
+            if (type === 'rank_bad') {
+                new Array(146.83, 138.59).forEach(hz => {
+                    let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.type = 'sawtooth'; o.frequency.setValueAtTime(hz, now);
+                    o.frequency.linearRampToValueAtTime(hz * 0.78, now + 0.85);
+                    g.gain.setValueAtTime(0.11 * seVol, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+                    o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.92);
+                });
+                return;
+            }
+            if (type === 'rank_normal') {
+                new Array({ t: 0, f: 440.00, d: 0.14 }, { t: 0.15, f: 392.00, d: 0.28 }).forEach(n => {
+                    let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.type = 'triangle'; o.frequency.setValueAtTime(n.f, now + n.t);
+                    g.gain.setValueAtTime(0.16 * seVol, now + n.t);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+                    o.connect(g); g.connect(dest); o.start(now + n.t); o.stop(now + n.t + n.d + 0.02);
+                });
+                return;
+            }
+            if (type === 'rank_tofu') {
+                new Array({ t: 0, f: 440.00, d: 0.20 }, { t: 0.22, f: 587.33, d: 0.55 }).forEach(n => {
+                    let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.type = 'triangle'; o.frequency.setValueAtTime(n.f, now + n.t);
+                    g.gain.setValueAtTime(0.18 * seVol, now + n.t);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+                    o.connect(g); g.connect(dest); o.start(now + n.t); o.stop(now + n.t + n.d + 0.02);
+                });
+                return;
+            }
+            if (type === 'funk_kick') {
+                let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.type = 'sine'; o.frequency.setValueAtTime(145, now);
+                o.frequency.exponentialRampToValueAtTime(42, now + 0.09);
+                g.gain.setValueAtTime(0.16 * bgmVol, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.10);
+                o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.11);
+                return;
+            }
+            if (type === 'funk_snare') {
+                let src = audioCtx.createBufferSource(), g = audioCtx.createGain();
+                let filt = audioCtx.createBiquadFilter();
+                filt.type = 'highpass'; filt.frequency.setValueAtTime(950, now);
+                src.buffer = getNoiseBuffer();
+                g.gain.setValueAtTime(0.11 * bgmVol, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+                src.connect(filt); filt.connect(g); g.connect(dest);
+                src.start(now); src.stop(now + 0.12);
+                return;
+            }
+
+            let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            if (type === 'press_tap') {
+                // 普通豆腐の単押し水切り音（タン！）
+                o.type = 'triangle';
+                o.frequency.setValueAtTime(440, now);
+                o.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+                g.gain.setValueAtTime(0.20 * seVol, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.13);
+            } else if (type === 'press_hold_start') {
+                // 特大豆腐の長押し開始音（ギュウ〜ッ…）
+                o.type = 'sawtooth';
+                o.frequency.setValueAtTime(220, now);
+                o.frequency.linearRampToValueAtTime(440, now + 0.45);
+                g.gain.setValueAtTime(0.13 * seVol, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.50);
+                o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.52);
+            } else if (type === 'press_hold_release') {
+                // 1拍後のリリース完了音（パッ！）
+                new Array(659.25, 987.77).forEach((hz, idx) => {
+                    let oh = audioCtx.createOscillator(), gh = audioCtx.createGain();
+                    oh.type = 'triangle';
+                    oh.frequency.setValueAtTime(hz, now + idx * 0.02);
+                    gh.gain.setValueAtTime(0.19 * seVol, now + idx * 0.02);
+                    gh.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.02 + 0.15);
+                    oh.connect(gh); gh.connect(dest); oh.start(now + idx * 0.02); oh.stop(now + idx * 0.02 + 0.17);
+                });
+            } else if (type === 'miss') {
+                o.type = 'sawtooth';
+                o.frequency.setValueAtTime(140, now);
+                o.frequency.linearRampToValueAtTime(82, now + 0.15);
+                g.gain.setValueAtTime(0.15 * seVol, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+                o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.18);
+            } else if (type === 'funk_bass') {
+                o.type = 'triangle';
+                o.frequency.setValueAtTime(freq, now);
+                g.gain.setValueAtTime(0.105 * bgmVol, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                o.connect(g); g.connect(dest); o.start(now); o.stop(now + dur + 0.02);
+            }
+        } catch (e) {}
+    }
+    const BPM = 120;
+    const BEAT_SEC = 60 / BPM;
+    const TRAVEL_BEATS = 4.0; // 左端からプレス機まで4拍かけて等速で流れる
+
+    // 2拍ごとに連続で豆腐が来るブロック生成関数（1ブロック＝8拍＝4個連続）
+    function makePressBlock(patternArr, goldLast = false) {
+        let items = new Array();
+        patternArr.forEach((k, idx) => {
+            items.push({
+                hitOff: 2.0 + idx * 2.0, // 2拍ごとにノンストップで到達！
+                kind: k,                 // 'tap'（単押し）or 'hold'（1拍長押し）
+                isGold: (goldLast && idx === patternArr.length - 1)
+            });
+        });
+        return {
+            len: 8.0,
+            items: items
+        };
+    }
+
+    const PRACTICE_MODES = new Array(
+        {
+            label: "1：普通豆腐（2拍ごとに [Space] 単押し！）",
+            len: 8.0,
+            items: new Array(
+                { hitOff: 2.0, kind: 'tap', isGold: false },
+                { hitOff: 4.0, kind: 'tap', isGold: false },
+                { hitOff: 6.0, kind: 'tap', isGold: false }
+            )
+        },
+        {
+            label: "2：特大豆腐（[Space] 1拍長押し → 次の拍で離す！）",
+            len: 8.0,
+            items: new Array(
+                { hitOff: 2.0, kind: 'hold', isGold: false },
+                { hitOff: 4.0, kind: 'hold', isGold: false },
+                { hitOff: 6.0, kind: 'hold', isGold: false }
+            )
+        },
+        {
+            label: "3：ミックス（単押し・単押し・1拍長押し！）",
+            len: 8.0,
+            items: new Array(
+                { hitOff: 2.0, kind: 'tap',  isGold: false },
+                { hitOff: 4.0, kind: 'tap',  isGold: false },
+                { hitOff: 6.0, kind: 'hold', isGold: false }
+            )
+        }
+    );
+
+    // 本番構成：2拍ごとに途切れず続く全14ブロック（112拍＋前奏8拍＝120拍＝ぴったり1分！）
+    const PROD_BLOCKS = new Array(
+        makePressBlock(new Array('tap', 'tap', 'tap', 'tap')),
+        makePressBlock(new Array('tap', 'tap', 'hold', 'tap')),
+        makePressBlock(new Array('tap', 'hold', 'tap', 'hold')),
+        makePressBlock(new Array('hold', 'hold', 'tap', 'tap')),
+        makePressBlock(new Array('tap', 'tap', 'tap', 'hold')),
+        makePressBlock(new Array('hold', 'tap', 'hold', 'tap')),
+        makePressBlock(new Array('tap', 'hold', 'hold', 'tap')),
+        makePressBlock(new Array('tap', 'tap', 'hold', 'hold')),
+        makePressBlock(new Array('hold', 'tap', 'tap', 'hold')),
+        makePressBlock(new Array('tap', 'hold', 'tap', 'tap')),
+        makePressBlock(new Array('hold', 'hold', 'hold', 'tap')),
+        makePressBlock(new Array('tap', 'tap', 'hold', 'tap')),
+        makePressBlock(new Array('hold', 'tap', 'hold', 'hold')),
+        makePressBlock(new Array('tap', 'tap', 'tap', 'hold'), true) // ラストは黄金の特大豆腐で1拍長押し決め！
+    );
+
+    // ファンキーな4つ打ちグルーヴベース（Eマイナーペンタトニック）
+    const FUNK_BASS = new Array(
+        164.81, 164.81, 196.00, 220.00,
+        246.94, 220.00, 196.00, 146.83
+    );
+    let phase = 'eyecatch';
+    let stateTimer = 0;
+
+    let isPaused = false;
+    let pauseMenuIdx = 0;
+    let pauseStartTime = 0;
+
+    let pracTypeIdx = 0;
+    let pracSuccessCount = 0;
+    let pracBlockHadError = false;
+    let pracClearWait = false;
+    let isDemoMode = false;
+
+    let prodIdx = 0;
+    let blockStartBeat = 0;
+    let blockEndBeat = 0;
+
+    let totalNotesCount = 0;
+    let successNotesCount = 0;
+    let perfectNotesCount = 0;
+    let goldMissed = false;
+    let emptyMissCount = 0;
+
+    let finalRankVal = 0;
+    let isPerfectClear = false;
+    let resStepTimer = 0;
+
+    let modeStartTime = 0;
+    let lastBeatInt = -1;
+    let allTofus = new Array();
+    let droplets = new Array();
+
+    let isPressing = false;
+    let activeHoldTofu = null;
+    let pressPlateDrop = 0;
+
+    let eyePressDone = false;
+    let pcOn = false;
+    let pcBounce = 0;
+
+    function togglePause() {
+        if (phase !== 'practice' && phase !== 'prod') return;
+        if (!isPaused) {
+            isPaused = true;
+            isPressing = false;
+            activeHoldTofu = null;
+            pauseMenuIdx = 0;
+            pauseStartTime = performance.now() / 1000;
+            playPikon(587.33);
+        } else {
+            isPaused = false;
+            modeStartTime += (performance.now() / 1000) - pauseStartTime;
+            playPikon(659.25);
+        }
+    }
+
+    function executePauseAction(idx) {
+        if (idx === 0) {
+            isPaused = false;
+            modeStartTime += (performance.now() / 1000) - pauseStartTime;
+            playPikon(659.25);
+        } else if (idx === 1) {
+            isPaused = false;
+            playPikon(659.25);
+            window.RIZUMU_GAMES["1-4"].start();
+        } else if (idx === 2) {
+            isPaused = false;
+            phase = 'stopped';
+            playPikon(523.25);
+            if (typeof window.quitRizumuGame === 'function') {
+                window.quitRizumuGame();
+            } else if (typeof window.finishRizumuGame === 'function') {
+                window.finishRizumuGame(-1);
+            }
+        }
+    }
+
+    function addWaterDrops(x, y, count, col = "#4fc3f7") {
+        for (let i = 0; i < count; i++) {
+            let side = (i % 2 === 0) ? -1 : 1;
+            let vx = side * (65 + Math.random() * 120);
+            let vy = -60 - Math.random() * 130;
+            droplets.push({
+                x: x + side * 22,
+                y: y,
+                vx: vx,
+                vy: vy,
+                life: 0.42 + Math.random() * 0.14,
+                maxLife: 0.56,
+                size: 3.5 + Math.random() * 2.5,
+                color: col
+            });
+        }
+    }
+
+    function queueBlock(startBeat, blk) {
+        blk.items.forEach(it => {
+            let tBeat = startBeat + it.hitOff;
+            allTofus.push({
+                kind: it.kind, // 'tap' | 'hold'
+                isGold: !!it.isGold,
+                targetBeat: tBeat,
+                releaseBeat: tBeat + 1.0, // 長押しの場合はちょうど1拍後に離す
+                state: 'moving', // 'moving' | 'holding' | 'pressed' | 'missed'
+                squish: 0,       // 0=水気たっぷり, 1=水切り完了して引き締まった状態
+                pressPerf: false
+            });
+        });
+    }
+
+    function setupPracticeStep() {
+        pracSuccessCount = 0;
+        pracBlockHadError = false;
+        pracClearWait = false;
+        isPressing = false;
+        activeHoldTofu = null;
+        allTofus = new Array();
+        lastBeatInt = -1;
+        modeStartTime = performance.now() / 1000;
+        const pm = PRACTICE_MODES.at(pracTypeIdx);
+        blockStartBeat = 0;
+        blockEndBeat = pm.len;
+        queueBlock(0, pm);
+    }
+
+    function toggleDemoMode() {
+        isDemoMode = !isDemoMode;
+        playPikon(isDemoMode ? 783.99 : 587.33);
+        setupPracticeStep();
+    }
+
+    function enterProductionWithFade() {
+        isDemoMode = false;
+        pracClearWait = false;
+        isPressing = false;
+        activeHoldTofu = null;
+        phase = 'fade_to_prod';
+        stateTimer = 0;
+        allTofus = new Array();
+    }
+
+    function beginProductionActual() {
+        phase = 'prod';
+        prodIdx = 0;
+        modeStartTime = performance.now() / 1000;
+        lastBeatInt = -1;
+        allTofus = new Array();
+        pcOn = true;
+
+        totalNotesCount = 0;
+        successNotesCount = 0;
+        perfectNotesCount = 0;
+        goldMissed = false;
+        emptyMissCount = 0;
+
+        const b = PROD_BLOCKS.at(0);
+        blockStartBeat = 8.0;
+        blockEndBeat = 8.0 + b.len;
+        queueBlock(8.0, b);
+    }
+
+    function computeFinalResult() {
+        let effectiveTotal = totalNotesCount + emptyMissCount;
+        let rate = effectiveTotal > 0 ? (successNotesCount / effectiveTotal) * 100 : 0;
+
+        isPerfectClear = (totalNotesCount > 0 && perfectNotesCount === totalNotesCount && emptyMissCount === 0 && !goldMissed);
+
+        if (rate <= 40) {
+            finalRankVal = 0;
+        } else if (rate <= 85 || goldMissed) {
+            finalRankVal = 1;
+        } else {
+            finalRankVal = isPerfectClear ? 3 : 2;
+        }
+
+        phase = 'fade_to_res';
+        stateTimer = 0;
+    }
+    function handlePressRelease() {
+        if (!isPressing) return;
+        isPressing = false;
+
+        if (!activeHoldTofu) return;
+        let tf = activeHoldTofu;
+        activeHoldTofu = null;
+
+        if (tf.state === 'holding') {
+            let curBeat = ((performance.now() / 1000) - modeStartTime) / BEAT_SEC;
+            let relDiff = Math.abs(curBeat - tf.releaseBeat);
+
+            if (relDiff <= 0.36) {
+                // 1拍後のビートで綺麗に離せた！
+                tf.state = 'pressed';
+                tf.squish = 1.0;
+                playTone('press_hold_release');
+                addWaterDrops(560, 325, 16, tf.isGold ? "#ffd54f" : "#4fc3f7");
+                if (phase === 'prod') {
+                    totalNotesCount++;
+                    successNotesCount++;
+                    if (tf.pressPerf && relDiff <= 0.16) {
+                        perfectNotesCount++;
+                        pcBounce = 1.0;
+                    }
+                }
+            } else {
+                // 離すのが早すぎた・遅すぎた（ミス）
+                tf.state = 'missed';
+                playTone('miss');
+                if (phase === 'prod') {
+                    totalNotesCount++;
+                    if (tf.isGold) goldMissed = true;
+                } else {
+                    pracSuccessCount = 0;
+                    pracBlockHadError = true;
+                }
+            }
+        }
+    }
+
+    window.RIZUMU_GAMES["1-4"] = {
+        start() {
+            phase = 'eyecatch';
+            stateTimer = 0;
+            isPaused = false;
+            pauseMenuIdx = 0;
+            pracTypeIdx = 0;
+            pracSuccessCount = 0;
+            pracBlockHadError = false;
+            pracClearWait = false;
+            isDemoMode = false;
+            isPressing = false;
+            activeHoldTofu = null;
+            pressPlateDrop = 0;
+            eyePressDone = false;
+            pcOn = false;
+            pcBounce = 0;
+            droplets = new Array();
+            allTofus = new Array();
+            playTone('jingle');
+
+            if (!window._rizumu14KeyDown) {
+                window._rizumu14KeyDown = function(ev) {
+                    if (phase === 'stopped' || phase === 'done') return;
+                    if (ev.repeat) return;
+                    if (ev.key === 'm' || ev.key === 'M' || ev.code === 'KeyM') {
+                        if (phase === 'practice' || phase === 'prod') {
+                            ev.preventDefault();
+                            togglePause();
+                        }
+                        return;
+                    }
+                    if (isPaused) {
+                        if (ev.code === 'ArrowUp' || ev.key === 'w' || ev.key === 'W') {
+                            ev.preventDefault();
+                            pauseMenuIdx = (pauseMenuIdx + 2) % 3;
+                            playPikon(523.25);
+                        } else if (ev.code === 'ArrowDown' || ev.key === 's' || ev.key === 'S') {
+                            ev.preventDefault();
+                            pauseMenuIdx = (pauseMenuIdx + 1) % 3;
+                            playPikon(523.25);
+                        } else if (ev.code === 'Enter') {
+                            ev.preventDefault();
+                            executePauseAction(pauseMenuIdx);
+                        }
+                    }
+                };
+                window._rizumu14Release = function() {
+                    if (isPressing) {
+                        handlePressRelease();
+                    }
+                };
+                window.addEventListener('keydown', window._rizumu14KeyDown);
+                window.addEventListener('keyup', window._rizumu14Release);
+                window.addEventListener('pointerup', window._rizumu14Release);
+            }
+        },
+        stop() {
+            phase = 'stopped';
+            isPaused = false;
+            isPressing = false;
+            if (window._rizumu14KeyDown) {
+                window.removeEventListener('keydown', window._rizumu14KeyDown);
+                window.removeEventListener('keyup', window._rizumu14Release);
+                window.removeEventListener('pointerup', window._rizumu14Release);
+                window._rizumu14KeyDown = null;
+                window._rizumu14Release = null;
+            }
+        },
+        onInput(kind, e) {
+            if (isPaused) {
+                if (kind === 'key' && !e.repeat && e.code === 'Space') {
+                    executePauseAction(pauseMenuIdx);
+                } else if (kind === 'pointer') {
+                    const cvs = e.target;
+                    const rect = cvs.getBoundingClientRect();
+                    const lx = (e.clientX - rect.left) * (940 / rect.width);
+                    const ly = (e.clientY - rect.top) * (520 / rect.height);
+                    if (lx >= 330 && lx <= 610) {
+                        if (ly >= 200 && ly <= 252) { pauseMenuIdx = 0; executePauseAction(0); }
+                        else if (ly >= 260 && ly <= 312) { pauseMenuIdx = 1; executePauseAction(1); }
+                        else if (ly >= 320 && ly <= 372) { pauseMenuIdx = 2; executePauseAction(2); }
+                    }
+                }
+                return;
+            }
+
+            if (kind === 'key') {
+                if (e.repeat) return;
+                if ((e.key === 's' || e.key === 'S') && phase === 'practice') {
+                    playPikon(659.25);
+                    enterProductionWithFade();
+                    return;
+                }
+                if ((e.key === 'd' || e.key === 'D') && phase === 'practice') {
+                    toggleDemoMode();
+                    return;
+                }
+                if (e.code !== 'Space') return;
+            }
+
+            if (kind === 'pointer' && phase === 'practice') {
+                const cvs = e.target;
+                const rect = cvs.getBoundingClientRect();
+                const lx = (e.clientX - rect.left) * (940 / rect.width);
+                const ly = (e.clientY - rect.top) * (520 / rect.height);
+                if (lx >= 18 && lx <= 185 && ly >= 468 && ly <= 510) {
+                    playPikon(659.25);
+                    enterProductionWithFade();
+                    return;
+                }
+                if (lx >= 775 && lx <= 915 && ly >= 16 && ly <= 60) {
+                    toggleDemoMode();
+                    return;
+                }
+            }
+
+            if (phase === 'res_step1' && resStepTimer > 0.25) {
+                playPikon(587.33); phase = 'res_step2'; resStepTimer = 0; return;
+            }
+            if (phase === 'res_step2' && resStepTimer > 0.35) {
+                phase = 'res_step3'; resStepTimer = 0;
+                if (finalRankVal === 0) playTone('rank_bad');
+                else if (finalRankVal === 1) playTone('rank_normal');
+                else playTone('rank_tofu');
+                return;
+            }
+            if (phase === 'res_step3' && resStepTimer > 0.45) {
+                playPikon(587.33); phase = 'res_card'; resStepTimer = 0; return;
+            }
+            if (phase === 'res_card' && resStepTimer > 0.45) {
+                playPikon(659.25); phase = 'done';
+                window.finishRizumuGame(finalRankVal);
+                return;
+            }
+
+            if (phase !== 'practice' && phase !== 'prod') return;
+            if (phase === 'practice' && (isDemoMode || pracClearWait)) return;
+
+            let curBeat = ((performance.now() / 1000) - modeStartTime) / BEAT_SEC;
+            pressPlateDrop = 1.0;
+
+            let best = null, minDiff = 999;
+            allTofus.forEach(tf => {
+                if (tf.state === 'moving') {
+                    let d = Math.abs(curBeat - tf.targetBeat);
+                    if (d < minDiff) { minDiff = d; best = tf; }
+                }
+            });
+
+            if (best && minDiff <= 0.34) {
+                let isPerf = (minDiff <= 0.15);
+                if (best.kind === 'tap') {
+                    best.state = 'pressed';
+                    best.squish = 1.0;
+                    playTone('press_tap');
+                    addWaterDrops(560, 335, isPerf ? 14 : 8, "#4fc3f7");
+                    if (phase === 'prod') {
+                        totalNotesCount++;
+                        successNotesCount++;
+                        if (isPerf) { perfectNotesCount++; pcBounce = 1.0; }
+                    }
+                } else {
+                    // 特大豆腐の長押し開始
+                    best.state = 'holding';
+                    best.pressPerf = isPerf;
+                    isPressing = true;
+                    activeHoldTofu = best;
+                    playTone('press_hold_start');
+                    addWaterDrops(560, 325, 8, best.isGold ? "#ffd54f" : "#81d4fa");
+                }
+            } else {
+                playTone('miss');
+                if (phase === 'prod') {
+                    emptyMissCount++;
+                } else if (phase === 'practice') {
+                    pracSuccessCount = 0;
+                    pracBlockHadError = true;
+                }
+            }
+        }
+    };
+    window.RIZUMU_GAMES["1-4"].update = function(dt) {
+        if (isPaused) return;
+
+        if (!isPressing && pressPlateDrop > 0) {
+            pressPlateDrop = Math.max(0, pressPlateDrop - dt * 6.5);
+        }
+        if (pcBounce > 0) pcBounce = Math.max(0, pcBounce - dt * 4.5);
+
+        for (let i = droplets.length - 1; i >= 0; i--) {
+            let d = droplets[i];
+            d.x += d.vx * dt;
+            d.y += d.vy * dt;
+            d.vy += 360 * dt;
+            d.life -= dt;
+            if (d.life <= 0) droplets.splice(i, 1);
+        }
+
+        if (phase === 'eyecatch') {
+            stateTimer += dt;
+            if (!eyePressDone && stateTimer >= 1.15) {
+                eyePressDone = true;
+                playTone('press_tap');
+                addWaterDrops(470, 345, 22, "#4fc3f7");
+            }
+            if (stateTimer >= 3.6) {
+                phase = 'practice';
+                pracTypeIdx = 0;
+                isDemoMode = false;
+                setupPracticeStep();
+            }
+            return;
+        }
+
+        if (phase === 'fade_to_prod') {
+            stateTimer += dt;
+            if (stateTimer >= 1.1) beginProductionActual();
+            return;
+        }
+
+        if (phase === 'fade_to_res') {
+            stateTimer += dt;
+            if (stateTimer >= 1.1) {
+                phase = 'res_step1';
+                resStepTimer = 0;
+                playPikon(523.25);
+            }
+            return;
+        }
+
+        if (phase === 'res_step1' || phase === 'res_step2' || phase === 'res_step3' || phase === 'res_card') {
+            resStepTimer += dt;
+            return;
+        }
+
+        if (phase !== 'practice' && phase !== 'prod') return;
+
+        let nowSec = performance.now() / 1000;
+        let curBeat = (nowSec - modeStartTime) / BEAT_SEC;
+
+        // ファンキーな4つ打ちビート伴奏（BPM 120）
+        let beatInt = Math.floor(curBeat);
+        if (beatInt !== lastBeatInt && beatInt >= 0) {
+            lastBeatInt = beatInt;
+            if (phase === 'prod') {
+                let idx8 = beatInt % 8;
+                if (beatInt % 2 === 0) playTone('funk_kick');
+                else playTone('funk_snare');
+                playTone('funk_bass', FUNK_BASS.at(idx8), 0.36);
+
+                if (beatInt >= 4 && beatInt <= 7) {
+                    playTone('intro_count');
+                }
+            }
+        }
+
+        for (let i = allTofus.length - 1; i >= 0; i--) {
+            let tf = allTofus[i];
+
+            // お手本モードの自動実演
+            if (phase === 'practice' && isDemoMode && tf.state === 'moving' && curBeat >= tf.targetBeat) {
+                if (tf.kind === 'tap') {
+                    tf.state = 'pressed';
+                    tf.squish = 1.0;
+                    pressPlateDrop = 1.0;
+                    playTone('press_tap');
+                    addWaterDrops(560, 335, 14, "#4fc3f7");
+                } else {
+                    tf.state = 'holding';
+                    isPressing = true;
+                    pressPlateDrop = 1.0;
+                    playTone('press_hold_start');
+                    addWaterDrops(560, 325, 8, "#81d4fa");
+                }
+            }
+            if (phase === 'practice' && isDemoMode && tf.state === 'holding' && curBeat >= tf.releaseBeat) {
+                tf.state = 'pressed';
+                tf.squish = 1.0;
+                isPressing = false;
+                playTone('press_hold_release');
+                addWaterDrops(560, 325, 16, "#4fc3f7");
+            }
+
+            // 押し忘れ見逃しミス判定
+            if (tf.state === 'moving' && curBeat > tf.targetBeat + 0.34) {
+                tf.state = 'missed';
+                playTone('miss');
+                if (phase === 'prod') {
+                    totalNotesCount++;
+                    if (tf.isGold) goldMissed = true;
+                } else {
+                    pracBlockHadError = true;
+                }
+            }
+
+            // 長押しを離し忘れて1.4拍以上経過した場合のミス判定
+            if (tf.state === 'holding' && curBeat > tf.releaseBeat + 0.38) {
+                tf.state = 'missed';
+                isPressing = false;
+                activeHoldTofu = null;
+                playTone('miss');
+                if (phase === 'prod') {
+                    totalNotesCount++;
+                    if (tf.isGold) goldMissed = true;
+                } else {
+                    pracBlockHadError = true;
+                }
+            }
+
+            // 画面右端を通り過ぎたら配列から削除
+            let tofuX = 560 + (curBeat - tf.targetBeat) * 145;
+            if (tofuX > 1060) {
+                allTofus.splice(i, 1);
+            }
+        }
+
+        if (curBeat >= blockEndBeat) {
+            if (phase === 'practice') {
+                if (isDemoMode) {
+                    const pm = PRACTICE_MODES.at(pracTypeIdx);
+                    blockStartBeat = blockEndBeat;
+                    blockEndBeat = blockStartBeat + pm.len;
+                    queueBlock(blockStartBeat, pm);
+                    return;
+                }
+
+                if (!pracClearWait) {
+                    if (!pracBlockHadError) pracSuccessCount++;
+                    pracBlockHadError = false;
+                    if (pracSuccessCount >= 3) {
+                        pracClearWait = true;
+                    } else {
+                        const pm = PRACTICE_MODES.at(pracTypeIdx);
+                        blockStartBeat = blockEndBeat;
+                        blockEndBeat = blockStartBeat + pm.len;
+                        queueBlock(blockStartBeat, pm);
+                    }
+                }
+
+                if (pracClearWait && allTofus.length === 0) {
+                    pracClearWait = false;
+                    pracTypeIdx++;
+                    if (pracTypeIdx >= PRACTICE_MODES.length) {
+                        enterProductionWithFade();
+                        return;
+                    }
+                    setupPracticeStep();
+                }
+            } else if (phase === 'prod') {
+                prodIdx++;
+                if (prodIdx < PROD_BLOCKS.length) {
+                    const nb = PROD_BLOCKS.at(prodIdx);
+                    blockStartBeat = blockEndBeat;
+                    blockEndBeat = blockStartBeat + nb.len;
+                    queueBlock(blockStartBeat, nb);
+                } else if (curBeat >= blockEndBeat + 2.5) {
+                    computeFinalResult();
+                }
+            }
+        }
+    };
+    function drawPressTofu(ctx, x, y, kind, state, isGold) {
+        ctx.save();
+        ctx.translate(x, y);
+
+        // kind === 'hold' は幅広の特大豆腐、'tap' は標準サイズ豆腐
+        let baseW = (kind === 'hold') ? 135 : 74;
+        let baseH = (kind === 'hold') ? 56 : 46;
+
+        if (state === 'holding') {
+            baseH *= 0.68;
+            baseW *= 1.08;
+        } else if (state === 'pressed') {
+            baseH *= 0.72;
+            baseW *= 1.04;
+        } else if (state === 'missed') {
+            ctx.rotate(0.25);
+        }
+
+        if (isGold) {
+            ctx.shadowColor = "#ffd54f";
+            ctx.shadowBlur = 18;
+            ctx.fillStyle = "#ffca28";
+            ctx.strokeStyle = "#9c6f00";
+        } else if (state === 'pressed') {
+            // 水切り完了後は引き締まった綺麗な白
+            ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = "#4a4a4a";
+        } else if (state === 'missed') {
+            ctx.fillStyle = "#cfd8dc";
+            ctx.strokeStyle = "#78909c";
+        } else {
+            // 水切り前は少し水色を含んだみずみずしい色合い
+            ctx.fillStyle = "#f2fbff";
+            ctx.strokeStyle = "#0288d1";
+        }
+
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(-baseW / 2, -baseH, baseW, baseH, 6);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // 特大豆腐（長押し）には「1拍ホールド」が直感的に分かる帯マークを表示
+        if (kind === 'hold' && state !== 'pressed') {
+            ctx.fillStyle = isGold ? "#fff9c4" : "#b3e5fc";
+            ctx.fillRect(-baseW / 2 + 12, -baseH + 10, baseW - 24, 8);
+        }
+
+        ctx.restore();
+    }
+
+    function drawPressMachine(ctx, x, y, dropAmount, isHoldActive) {
+        ctx.save();
+        ctx.translate(x, y);
+
+        // 上部の支柱フレーム
+        ctx.fillStyle = "#78909c";
+        ctx.strokeStyle = "#37474f";
+        ctx.lineWidth = 3.5;
+        ctx.fillRect(-16, -160, 32, 130 + dropAmount * 48);
+        ctx.strokeRect(-16, -160, 32, 130 + dropAmount * 48);
+
+        // プレス板（押している間はオレンジ色に発光）
+        let plateY = -30 + dropAmount * 48;
+        ctx.fillStyle = isHoldActive ? "#ffca28" : (dropAmount > 0.2 ? "#ffe082" : "#eceff1");
+        ctx.strokeStyle = "#37474f";
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.roundRect(-78, plateY, 156, 24, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    function drawHiddenTofuPC(ctx, x, y, isOn, bounce) {
+        ctx.save();
+        ctx.translate(x, y - bounce * 8);
+        ctx.scale(0.45, 0.45);
+        ctx.fillStyle = "#b0a792"; ctx.fillRect(-58, 72, 116, 10);
+        ctx.fillStyle = "#5c564c"; ctx.fillRect(-50, 0, 100, 68);
+        ctx.fillStyle = isOn ? "#fcfaf2" : "#2b2b2b";
+        ctx.fillRect(-45, 5, 90, 56);
+        if (isOn) {
+            ctx.fillStyle = "#4a4a4a"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center";
+            ctx.fillText("とうふ", 0, 26);
+            ctx.fillStyle = "#e9d7a5"; ctx.fillRect(-25, 34, 50, 4);
+        }
+        ctx.restore();
+    }
+    window.RIZUMU_GAMES["1-4"].draw = function(ctx, canvas) {
+        ctx.save();
+        ctx.scale(canvas.width / 940, canvas.height / 520);
+        ctx.clearRect(0, 0, 940, 520);
+
+        // ★ 1. アイキャッチ画面（水切りプレス＋水しぶき演出）
+        if (phase === 'eyecatch') {
+            ctx.fillStyle = "#e1f5fe";
+            ctx.fillRect(0, 0, 940, 520);
+
+            // タイトルロゴ「水切りプレス」
+            ctx.save();
+            ctx.translate(470, 118);
+            ctx.font = "900 66px 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = "#01579b";
+            ctx.strokeText("水切りプレス", 0, 0);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText("水切りプレス", 0, 0);
+            ctx.restore();
+
+            // 下の台座
+            ctx.fillStyle = "#90a4ae";
+            ctx.strokeStyle = "#37474f";
+            ctx.lineWidth = 4;
+            ctx.fillRect(320, 385, 300, 26);
+            ctx.strokeRect(320, 385, 300, 26);
+
+            // プレス機の落下アニメーション（1.15秒でドスン！）
+            let drop = 0;
+            if (stateTimer >= 1.05) {
+                let t = Math.min(1, (stateTimer - 1.05) / 0.12);
+                drop = t;
+            }
+            let tofuState = (stateTimer >= 1.15) ? 'pressed' : 'moving';
+            drawPressTofu(ctx, 470, 385, 'hold', tofuState, false);
+            drawPressMachine(ctx, 470, 335, drop, false);
+
+            // 水しぶきパーティクル
+            droplets.forEach(d => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, d.life / d.maxLife);
+                ctx.fillStyle = d.color;
+                ctx.beginPath(); ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            });
+
+            // 右下に「[m]でポーズ」がゆっくり現れる
+            if (stateTimer >= 1.15) {
+                let fadeAlpha = Math.min(1, (stateTimer - 1.15) / 0.85);
+                ctx.save();
+                ctx.globalAlpha = fadeAlpha;
+                ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+                ctx.strokeStyle = "#0277bd";
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.roundRect(755, 466, 162, 36, 18); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = "#01579b";
+                ctx.font = "bold 15px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("[m]でポーズ", 836, 489);
+                ctx.restore();
+            }
+
+            ctx.restore();
+            return;
+        }
+        if (phase === 'res_step1' || phase === 'res_step2' || phase === 'res_step3' || phase === 'res_card') {
+            ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0, 0, 940, 520);
+
+            if (phase === 'res_step1' || phase === 'res_step2' || phase === 'res_step3') {
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath(); ctx.roundRect(65, 52, 260, 44, 22); ctx.fill();
+                ctx.fillStyle = "#111111"; ctx.font = "bold 19px sans-serif"; ctx.textAlign = "center";
+                ctx.fillText("水切り名人より", 195, 81);
+
+                if (phase === 'res_step2' || phase === 'res_step3') {
+                    ctx.textAlign = "left";
+                    if (isPerfectClear) {
+                        ctx.fillStyle = "#ffd54f"; ctx.font = "bold 17px sans-serif";
+                        ctx.fillText("しかもパーフェクト", 250, 185);
+                    }
+                    ctx.fillStyle = "#ffffff"; ctx.font = "bold 25px sans-serif";
+                    if (finalRankVal === 0) {
+                        ctx.fillText("まだ水っぽさが残っているな。", 250, 235);
+                        ctx.fillText("ビートに乗ってしっかり絞ろう。", 250, 278);
+                    } else if (finalRankVal === 1) {
+                        ctx.fillText("なかなかいい水切りだったよ。", 250, 225);
+                        ctx.fillText("長押しの離すタイミングも意識しよう。", 250, 268);
+                    } else {
+                        ctx.fillText("完璧な水切りプレスだった！", 250, 215);
+                        ctx.fillText("余分な水分が抜けて旨味が凝縮したぞ。", 250, 258);
+                        ctx.fillText("立派な水切り名人だな！", 250, 301);
+                    }
+                }
+
+                if (phase === 'res_step3') {
+                    ctx.save(); ctx.translate(765, 415);
+                    let rankLabel = (finalRankVal === 0) ? "やり直し" : (finalRankVal === 1) ? "普通" : "豆腐";
+                    let mainCol   = (finalRankVal === 0) ? "#90a4ae" : (finalRankVal === 1) ? "#81c784" : "#ffca28";
+                    let subBadge  = isPerfectClear ? "パーフェクト！" : (finalRankVal === 2) ? "最高の仕上がり！" : (finalRankVal === 1) ? "水切り完了！" : "もう一度挑戦！";
+
+                    if (finalRankVal >= 2) {
+                        ctx.fillStyle = "#ffffff";
+                        new Array({ x: -115, y: -25, r: 22 }, { x: 115, y: 10, r: 18 }, { x: 75, y: -38, r: 14 }).forEach(st => {
+                            ctx.beginPath();
+                            for (let i = 0; i < 8; i++) {
+                                let rad = (i % 2 === 0) ? st.r : st.r * 0.3;
+                                let a = (i / 8) * Math.PI * 2;
+                                ctx.lineTo(st.x + Math.cos(a) * rad, st.y + Math.sin(a) * rad);
+                            }
+                            ctx.closePath(); ctx.fill();
+                        });
+                    }
+
+                    ctx.save(); ctx.transform(1, 0, -0.18, 1, 0, 0);
+                    ctx.font = "900 58px sans-serif"; ctx.textAlign = "center";
+                    ctx.lineWidth = 10; ctx.strokeStyle = "#3e2723"; ctx.strokeText(rankLabel, 0, 0);
+                    ctx.fillStyle = mainCol; ctx.fillText(rankLabel, 0, 0);
+                    ctx.restore();
+
+                    ctx.fillStyle = (finalRankVal === 0) ? "#546e7a" : "#ffb300";
+                    ctx.beginPath(); ctx.roundRect(-105, 18, 210, 28, 14); ctx.fill();
+                    ctx.fillStyle = (finalRankVal === 0) ? "#ffffff" : "#212121";
+                    ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText(subBadge, 0, 37);
+                    ctx.restore();
+                }
+
+                ctx.fillStyle = "#777777"; ctx.font = "13px sans-serif"; ctx.textAlign = "left";
+                ctx.fillText("クリック / [Space] で次へ", 65, 475);
+            } else {
+                ctx.save(); ctx.translate(470, 250);
+                if (finalRankVal === 0) {
+                    drawPressTofu(ctx, 0, 20, 'tap', 'missed', false);
+                } else if (finalRankVal === 1) {
+                    drawPressTofu(ctx, -50, 25, 'tap', 'pressed', false);
+                    drawPressTofu(ctx, 50, 25, 'tap', 'pressed', false);
+                } else {
+                    drawPressTofu(ctx, 0, 28, 'hold', 'pressed', true);
+                    ctx.strokeStyle = "#ffd54f"; ctx.lineWidth = 3;
+                    for (let i = 0; i < 8; i++) {
+                        let a = (i / 8) * Math.PI * 2;
+                        ctx.beginPath(); ctx.moveTo(Math.cos(a) * 85, Math.sin(a) * 45);
+                        ctx.lineTo(Math.cos(a) * 115, Math.sin(a) * 62); ctx.stroke();
+                    }
+                }
+                ctx.restore();
+
+                ctx.fillStyle = "#ffffff"; ctx.font = "bold 30px sans-serif"; ctx.textAlign = "center";
+                let caption = (finalRankVal === 0) ? "ビートを体で感じよう。"
+                            : (finalRankVal === 1) ? "いい手際だったぞ。"
+                            : "極上の水切り技術だ！";
+                ctx.fillText(caption, 470, 365);
+
+                ctx.fillStyle = "#777777"; ctx.font = "13px sans-serif";
+                ctx.fillText("クリック / [Space] で戻る", 470, 465);
+            }
+            ctx.restore();
+            return;
+        }
+        // ★ 3. プレイ画面（爽やかな水切りプレスライン）
+        ctx.fillStyle = "#eceff1";
+        ctx.fillRect(0, 0, 940, 365);
+        ctx.fillStyle = "#cfd8dc";
+        ctx.fillRect(0, 365, 940, 155);
+
+        // 奥の隠れ豆腐パソコン
+        drawHiddenTofuPC(ctx, 470, 82, pcOn, pcBounce);
+
+        let effectiveNow = isPaused ? pauseStartTime : (performance.now() / 1000);
+        let curBeat = (effectiveNow - modeStartTime) / BEAT_SEC;
+
+        // ベルトコンベア
+        ctx.fillStyle = "#607d8b";
+        ctx.fillRect(0, 365, 940, 28);
+        ctx.fillStyle = "#90a4ae";
+        let beltShift = (curBeat * 145) % 40;
+        for (let bx = beltShift - 40; bx < 940; bx += 40) {
+            ctx.fillRect(bx, 365, 10, 6);
+        }
+
+        // 流れてくる豆腐の描画（x=560 がプレス機の真下）
+        allTofus.forEach(tf => {
+            // 特大豆腐（1拍長押し）は中心が1拍分（0.5拍ぶん右）長くなるよう位置補正
+            let centerBeatOffset = (tf.kind === 'hold') ? 0.5 : 0;
+            let tofuX = 560 + (curBeat - (tf.targetBeat + centerBeatOffset)) * 145;
+            if (tofuX >= -140 && tofuX <= 1060) {
+                drawPressTofu(ctx, tofuX, 365, tf.kind, tf.state, tf.isGold);
+            }
+        });
+
+        // 水切りプレス機（x=560）
+        drawPressMachine(ctx, 560, 325, isPressing ? 1.0 : pressPlateDrop, isPressing);
+
+        // 弾ける水滴パーティクル
+        droplets.forEach(d => {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, d.life / d.maxLife);
+            ctx.fillStyle = d.color;
+            ctx.beginPath(); ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        });
+        if (phase === 'practice') {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+            ctx.strokeStyle = "#b8b2a0"; ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.roundRect(110, 16, 645, 44, 22); ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = "#4a4a4a"; ctx.font = "bold 14.5px sans-serif"; ctx.textAlign = "center";
+            let statusText = isDemoMode ? "【お手本実演中】" : `成功：${pracSuccessCount} / 3`;
+            ctx.fillText(`${PRACTICE_MODES.at(pracTypeIdx).label}　${statusText}`, 432, 44);
+
+            // 右上：お手本 / 練習に戻るボタン
+            ctx.fillStyle = isDemoMode ? "#ffb300" : "#ffffff";
+            ctx.strokeStyle = "#8c6d23"; ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.roundRect(775, 16, 140, 44, 22); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = isDemoMode ? "#212121" : "#8c6d23";
+            ctx.font = "bold 14px sans-serif";
+            ctx.fillText(isDemoMode ? "練習に戻る" : "お手本 (D)", 845, 43);
+
+            // 左下：「[s]でスキップ」表示
+            ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+            ctx.strokeStyle = "#8c6d23"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.roundRect(18, 468, 165, 38, 19); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "#5d4037"; ctx.font = "bold 15px sans-serif";
+            ctx.fillText("[s]でスキップ", 100, 492);
+            ctx.textAlign = "left";
+        }
+
+        // ★ ポーズ画面オーバーレイ（画面中央・選択中の項目を少し大きく強調）
+        if (isPaused) {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.58)";
+            ctx.fillRect(0, 0, 940, 520);
+
+            ctx.fillStyle = "#fcfaf2";
+            ctx.strokeStyle = "#4a4a4a";
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.roundRect(300, 125, 340, 275, 24); ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = "#4a4a4a";
+            ctx.font = "900 24px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("PAUSE", 470, 172);
+
+            const menuItems = new Array("再開する", "最初からやり直す", "やめる");
+            menuItems.forEach((label, idx) => {
+                let y = 232 + idx * 58;
+                let selected = (idx === pauseMenuIdx);
+                if (selected) {
+                    ctx.fillStyle = "rgba(255, 202, 40, 0.25)";
+                    ctx.beginPath(); ctx.roundRect(330, y - 26, 280, 44, 14); ctx.fill();
+                    ctx.fillStyle = "#d97706";
+                    ctx.font = "900 26px sans-serif";
+                    ctx.fillText("▶ " + label, 470, y + 4);
+                } else {
+                    ctx.fillStyle = "#6e6657";
+                    ctx.font = "bold 19px sans-serif";
+                    ctx.fillText(label, 470, y + 2);
+                }
+            });
+            ctx.textAlign = "left";
+        }
+
+        if (phase === 'fade_to_prod' || phase === 'fade_to_res') {
+            let alpha = Math.min(1, stateTimer / 0.7);
+            ctx.fillStyle = `rgba(17, 17, 17, ${alpha})`;
+            ctx.fillRect(0, 0, 940, 520);
+        }
+
+        ctx.restore();
+    };
+})();
