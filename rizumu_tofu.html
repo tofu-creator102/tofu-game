@@ -675,6 +675,11 @@
         function handleSideContextAction() {
             toggleSidebar(false);
             if (document.getElementById('title-screen').classList.contains('active')) {
+                // ★ 戻る直前に現在のスロットとクリア履歴を確実に保存
+                localStorage.setItem('tofu_current_slot', currentSlot);
+                localStorage.setItem(`tofu_rizumu_slot_${currentSlot}`, JSON.stringify(rizumuData));
+                syncRizumuProgressToPortal();
+
                 document.getElementById('title-screen').classList.remove('active');
                 const trigger = document.querySelector('.sidebar-trigger');
                 if (trigger) trigger.style.display = 'none';
@@ -686,6 +691,7 @@
                 document.getElementById('title-screen').classList.add('active');
             }
         }
+
 
         function saveVol() {
             localStorage.setItem('tofu_rizumu_bgm_vol', document.getElementById('bgm-vol').value);
