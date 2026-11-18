@@ -341,21 +341,16 @@ function clearLinkedGameData(slot) {
             }
         }
 
-let targetSlot = (typeof currentSlot !== 'undefined') ? currentSlot
-               : (typeof selectedSlot !== 'undefined') ? selectedSlot
-               : (localStorage.getItem('tofu_current_slot') || 1);
-clearLinkedGameData(targetSlot);
-
         function goToGame(url) {
-            if (typeof currentSlot !== 'undefined') localStorage.setItem('tofu_current_slot', currentSlot);
-            if (typeof selectedSlot !== 'undefined') localStorage.setItem('tofu_current_slot', selectedSlot);
-
+            if (chosenSlot !== null) {
+                localStorage.setItem('tofu_current_slot', chosenSlot);
+            }
             if(bgm) bgm.pause();
             document.getElementById('main-screen').classList.remove('active');
             document.getElementById('sidebar-trigger').style.display = 'none';
             document.getElementById('loading-screen').classList.add('active');
 
-            setTimeout(() => {
+        setTimeout(() => {
                 window.location.href = url;
             }, 4800);
         }
