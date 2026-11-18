@@ -3620,6 +3620,34 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             ctx.restore();
             return;
         }
+        // ★ 3. プレイ画面（穏やかな和風豆腐工房）
+        ctx.fillStyle = "#ede6d3";
+        ctx.fillRect(0, 0, 940, 350);
+        ctx.fillStyle = "#d9ceb2";
+        ctx.fillRect(0, 350, 940, 170);
+
+        // 奥の隠れ豆腐パソコン
+        drawHiddenTofuPC(ctx, 470, 86, pcOn, pcBounce);
+
+        // 中央の大きな豆乳桶
+        drawSoyMilkTub(ctx, 470, 315, ripples);
+
+        // 落下中のにがり水滴
+        drops.forEach(dr => {
+            ctx.save();
+            ctx.fillStyle = dr.isGold ? "#ffca28" : "#29b6f6";
+            ctx.beginPath();
+            ctx.arc(dr.x, dr.y, dr.big ? 11 : 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+
+        // 左側の豆乳柄杓（表拍で傾いて豆乳を注ぐ）
+        drawSoyLadle(ctx, 355, 205, ladleTilt);
+
+        // 右側のにがり小瓶（裏拍で押し下げてにがりを打ち込む）
+        drawNigariBottle(ctx, 565, 175, bottleDrop);
+
         if (phase === 'practice') {
             ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
             ctx.strokeStyle = "#b8b2a0"; ctx.lineWidth = 2.5;
