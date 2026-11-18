@@ -2589,7 +2589,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             }
         } catch (e) {}
     }
-    const BPM = 122;
+    const BPM = 124;
     const BEAT_SEC = 60 / BPM;
     const HOLD_MIN_SEC = 0.24;
 
@@ -2664,26 +2664,33 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                 )
             };
         } else {
-            // 4：（1・2・3・4・ぽちゃん）→ ウン・ウン・ウン・ウン・ポン！ ← ラストの4拍あけ決め
+            // 4：（1・2・3・4・ぽちゃん）→ ピッピッピッピ → （1・2・3・4）・ポン！ ← 完全オウム返し決め
             return {
-                len: 12.0,
+                len: 16.0,
                 tubEnterBeat: 0.0,
-                tubHoldLeftEnd: 5.3,
-                tubArriveRightBeat: 6.2,
-                tubLeaveBeat: 11.4,
+                tubHoldLeftEnd: 5.5,
+                tubArriveRightBeat: 9.5,
+                tubLeaveBeat: 15.2,
                 cues: new Array(
-                    { off: 1.0, kind: 'count', num: 1, hz: 392.00 },
-                    { off: 2.0, kind: 'count', num: 2, hz: 440.00 },
-                    { off: 3.0, kind: 'count', num: 3, hz: 493.88 },
-                    { off: 4.0, kind: 'count', num: 4, hz: 523.25 },
-                    { off: 5.0, kind: 'pocha' },
-                    { off: 6.0, kind: 'count_silent', num: 1 },
-                    { off: 7.0, kind: 'count_silent', num: 2 },
-                    { off: 8.0, kind: 'count_silent', num: 3 },
-                    { off: 9.0, kind: 'count_silent', num: 4 }
+                    // 先輩のお手本：1・2・3・4・ぽちゃん
+                    { off: 1.0,  kind: 'count', num: 1, hz: 392.00 },
+                    { off: 2.0,  kind: 'count', num: 2, hz: 440.00 },
+                    { off: 3.0,  kind: 'count', num: 3, hz: 493.88 },
+                    { off: 4.0,  kind: 'count', num: 4, hz: 523.25 },
+                    { off: 5.0,  kind: 'pocha' },
+                    // バトンタッチ：ピッ・ピッ・ピッ・ピッ
+                    { off: 6.0,  kind: 'pip',   num: 1, hz: 987.77 },
+                    { off: 7.0,  kind: 'pip',   num: 2, hz: 987.77 },
+                    { off: 8.0,  kind: 'pip',   num: 3, hz: 987.77 },
+                    { off: 9.0,  kind: 'pip',   num: 4, hz: 1318.51 },
+                    // 自分の番のオウム返しガイド：1・2・3・4 → (5拍目でポン！)
+                    { off: 10.0, kind: 'count', num: 1, hz: 392.00 },
+                    { off: 11.0, kind: 'count', num: 2, hz: 440.00 },
+                    { off: 12.0, kind: 'count', num: 3, hz: 493.88 },
+                    { off: 13.0, kind: 'count', num: 4, hz: 523.25 }
                 ),
                 hits: new Array(
-                    { off: 10.0, kind: 'tap', isGold: isGoldFinal }
+                    { off: 14.0, kind: 'tap', isGold: isGoldFinal }
                 )
             };
         }
@@ -2695,7 +2702,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         Object.assign({ label: "3：（ぽちゃ×2・ボッチャン）→ 1・2・3・4 → ポン・ポン・ぽっちゃん[長押し]！" }, makeNigariBlock(3))
     );
 
-    // 本番構成：全184拍（BPM122で約1分30秒・16連打なしの本格コール＆レスポンス）
+    // 本番構成：全125拍（BPM124＋8拍前奏で約62秒＝ぴったり約1分の構成！）
     const PROD_BLOCKS = new Array(
         makeNigariBlock(1),
         makeNigariBlock(1),
@@ -2705,13 +2712,8 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         makeNigariBlock(2),
         makeNigariBlock(3),
         makeNigariBlock(2),
-        makeNigariBlock(1),
         makeNigariBlock(3),
-        makeNigariBlock(2),
-        makeNigariBlock(3),
-        makeNigariBlock(1),
-        makeNigariBlock(3),
-        makeNigariBlock(4, true)  // ラストの決め：（1・2・3・4・ぽちゃん）ウン・ウン・ウン・ウン・ポン！
+        makeNigariBlock(4, true)  // ラストの決め：（1・2・3・4・ぽちゃん）→ ピッピッピッピ →（1・2・3・4）・ポン！
     );
 
     const WA_BASS = new Array(
