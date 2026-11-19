@@ -2418,23 +2418,11 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
     };
 })();
 // ==========================================
-// 3つ目のゲーム：にがり打ち (1-3) 【ノズル＆穴コンベア刷新版】
+// 3つ目のゲーム：にがり打ち (1-3) 【Nキー大量投入＆完全目隠し壁版】
 // ==========================================
 window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
 
 (function() {
-    let noiseBuffer = null;
-    function getNoiseBuffer() {
-        if (noiseBuffer) return noiseBuffer;
-        ensureAudio();
-        const sr = audioCtx.sampleRate;
-        const buf = audioCtx.createBuffer(1, sr * 0.45, sr);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-        noiseBuffer = buf;
-        return buf;
-    }
-
     function playTone(type, freq = 440, dur = 0.14) {
         try {
             ensureAudio();
@@ -2522,43 +2510,38 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                 return;
             }
             if (type === 'soy_basha') {
-                // 小さい桶・金桶への豆乳音（バシャ！）
-                let src = audioCtx.createBufferSource(), g = audioCtx.createGain();
-                let filt = audioCtx.createBiquadFilter();
-                filt.type = 'bandpass'; filt.frequency.setValueAtTime(850, now);
-                src.buffer = getNoiseBuffer();
-                g.gain.setValueAtTime(0.17 * seVol, now);
-                g.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
-                src.connect(filt); filt.connect(g); g.connect(dest);
-                src.start(now); src.stop(now + 0.14);
-
-                let o = audioCtx.createOscillator(), go = audioCtx.createGain();
-                o.type = 'sine'; o.frequency.setValueAtTime(340, now);
-                o.frequency.exponentialRampToValueAtTime(520, now + 0.08);
-                go.gain.setValueAtTime(0.14 * seVol, now);
-                go.gain.exponentialRampToValueAtTime(0.001, now + 0.10);
-                o.connect(go); go.connect(dest); o.start(now); o.stop(now + 0.11);
+                // 小さい桶・金桶への軽やかな豆乳音（バシャ！）
+                new Array(340, 510).forEach((hz, idx) => {
+                    let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(hz, now + idx * 0.02);
+                    o.frequency.exponentialRampToValueAtTime(hz * 1.45, now + idx * 0.02 + 0.08);
+                    g.gain.setValueAtTime(0.14 * seVol, now + idx * 0.02);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.02 + 0.10);
+                    o.connect(g); g.connect(dest);
+                    o.start(now + idx * 0.02); o.stop(now + idx * 0.02 + 0.11);
+                });
                 return;
             }
 
-            if (type === 'soy_zaa') {
-                // 大きい桶への豆乳音（ザーーーッ）
-                let src = audioCtx.createBufferSource(), g = audioCtx.createGain();
-                let filt = audioCtx.createBiquadFilter();
-                filt.type = 'bandpass'; filt.frequency.setValueAtTime(680, now);
-                src.buffer = getNoiseBuffer();
-                g.gain.setValueAtTime(0.16 * seVol, now);
-                g.gain.linearRampToValueAtTime(0.14 * seVol, now + 0.24);
-                g.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
-                src.connect(filt); filt.connect(g); g.connect(dest);
-                src.start(now); src.stop(now + 0.38);
-
-                let o = audioCtx.createOscillator(), go = audioCtx.createGain();
-                o.type = 'triangle'; o.frequency.setValueAtTime(240, now);
-                o.frequency.linearRampToValueAtTime(320, now + 0.30);
-                go.gain.setValueAtTime(0.12 * seVol, now);
-                go.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
-                o.connect(go); go.connect(dest); o.start(now); o.stop(now + 0.35);
+            if (type === 'soy_large_pour') {
+                // 大きい桶への心地よい大量豆乳音（トクトクトク…と澄んだ水滴の連なり）
+                const drops = new Array(
+                    { t: 0.00, f: 280 },
+                    { t: 0.06, f: 340 },
+                    { t: 0.12, f: 410 },
+                    { t: 0.18, f: 490 }
+                );
+                drops.forEach(d => {
+                    let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(d.f, now + d.t);
+                    o.frequency.exponentialRampToValueAtTime(d.f * 1.35, now + d.t + 0.07);
+                    g.gain.setValueAtTime(0.15 * seVol, now + d.t);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + d.t + 0.09);
+                    o.connect(g); g.connect(dest);
+                    o.start(now + d.t); o.stop(now + d.t + 0.10);
+                });
                 return;
             }
 
@@ -2578,30 +2561,23 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
 
             let o = audioCtx.createOscillator(), g = audioCtx.createGain();
             if (type === 'nigari_pocha') {
-                // 小さい桶へのにがり単押し音（ポチャ！）
+                // 小さい桶への単押し音（ポチャ！[Space]）
                 o.type = 'sine';
                 o.frequency.setValueAtTime(659.25, now);
                 o.frequency.exponentialRampToValueAtTime(987.77, now + 0.08);
                 g.gain.setValueAtTime(0.20 * seVol, now);
                 g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
                 o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.13);
-            } else if (type === 'nigari_hold_start') {
-                // 大きい桶の長押し開始音（ボッ…）
-                o.type = 'triangle';
-                o.frequency.setValueAtTime(440.00, now);
-                o.frequency.linearRampToValueAtTime(659.25, now + 0.24);
-                g.gain.setValueAtTime(0.16 * seVol, now);
-                g.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-                o.connect(g); g.connect(dest); o.start(now); o.stop(now + 0.30);
             } else if (type === 'nigari_bocchan') {
-                // 大きい桶の長押し完了音（…チャーン！）
-                new Array(587.33, 880.00).forEach((hz, idx) => {
+                // 大きい桶への大量投入音（ボッチャン！[N]）
+                new Array(440.00, 659.25, 880.00).forEach((hz, idx) => {
                     let oh = audioCtx.createOscillator(), gh = audioCtx.createGain();
-                    oh.type = 'sine';
-                    oh.frequency.setValueAtTime(hz, now + idx * 0.025);
-                    gh.gain.setValueAtTime(0.20 * seVol, now + idx * 0.025);
-                    gh.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.025 + 0.18);
-                    oh.connect(gh); gh.connect(dest); oh.start(now + idx * 0.025); oh.stop(now + idx * 0.025 + 0.20);
+                    oh.type = (idx === 0) ? 'triangle' : 'sine';
+                    oh.frequency.setValueAtTime(hz, now + idx * 0.02);
+                    oh.frequency.exponentialRampToValueAtTime(hz * 1.25, now + idx * 0.02 + 0.14);
+                    gh.gain.setValueAtTime(0.17 * seVol, now + idx * 0.02);
+                    gh.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.02 + 0.18);
+                    oh.connect(gh); gh.connect(dest); oh.start(now + idx * 0.02); oh.stop(now + idx * 0.02 + 0.20);
                 });
             } else if (type === 'miss') {
                 o.type = 'sawtooth';
@@ -2628,19 +2604,19 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
     }
     const BPM = 128;
     const BEAT_SEC = 60 / BPM;
-    const HOLD_MIN_SEC = 0.22;
-    const TRAVEL_BEATS = 2.0; // 左ノズル(x=300)から右ノズル(x=640)まで「1拍あけて（＝2拍後）」到着！
+    const NORMAL_TRAVEL_BEATS = 2.0; // 通常時：1拍あけて（＝2拍後に）右ノズルへ到達
+    const GOLD_TRAVEL_BEATS   = 6.0; // ラスト決め：1拍あけてからさらに4拍あけて（＝6拍後に）右ノズルへ到達！
 
     function makeTubPat(type) {
         if (type === 1) {
-            // 1：小さい桶×3（1拍ごとに連続：バシャ・バシャ・バシャ → ポチャ・ポチャ・ポチャ）
+            // 1：小さい桶×3（[Space] 単押し）
             return {
                 len: 7.0,
                 counts: new Array(),
                 tubs: new Array(
-                    { soyBeat: 1.0, kind: 'small' },
-                    { soyBeat: 2.0, kind: 'small' },
-                    { soyBeat: 3.0, kind: 'small' }
+                    { soyBeat: 1.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
+                    { soyBeat: 2.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
+                    { soyBeat: 3.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS }
                 )
             };
         } else if (type === 2) {
@@ -2649,68 +2625,74 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                 len: 9.0,
                 counts: new Array(),
                 tubs: new Array(
-                    { soyBeat: 1.0, kind: 'small' },
-                    { soyBeat: 2.0, kind: 'small' },
-                    { soyBeat: 4.0, kind: 'small' },
-                    { soyBeat: 5.0, kind: 'small' }
+                    { soyBeat: 1.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
+                    { soyBeat: 2.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
+                    { soyBeat: 4.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
+                    { soyBeat: 5.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS }
                 )
             };
         } else if (type === 3) {
-            // 3：小さい桶×2・大きい桶×1
+            // 3：小さい桶×2・大きい桶×1（[Space]・[Space]・[N]）
             return {
                 len: 8.0,
                 counts: new Array(),
                 tubs: new Array(
-                    { soyBeat: 1.0, kind: 'small' },
-                    { soyBeat: 2.0, kind: 'small' },
-                    { soyBeat: 3.0, kind: 'large' }
+                    { soyBeat: 1.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
+                    { soyBeat: 2.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
+                    { soyBeat: 3.0, kind: 'large', travel: NORMAL_TRAVEL_BEATS }
                 )
             };
         } else if (type === 4) {
-            // 4：大きい桶×3（1.5拍間隔でザー・ザー・ザー → ボッチャン×3）
+            // 4：大きい桶×3（[N]・[N]・[N]）
             return {
-                len: 9.0,
+                len: 8.0,
                 counts: new Array(),
                 tubs: new Array(
-                    { soyBeat: 1.0, kind: 'large' },
-                    { soyBeat: 2.5, kind: 'large' },
-                    { soyBeat: 4.0, kind: 'large' }
+                    { soyBeat: 1.0, kind: 'large', travel: NORMAL_TRAVEL_BEATS },
+                    { soyBeat: 2.0, kind: 'large', travel: NORMAL_TRAVEL_BEATS },
+                    { soyBeat: 3.0, kind: 'large', travel: NORMAL_TRAVEL_BEATS }
                 )
             };
         } else {
-            // 5：ウン・ウン・ウン・ウン・金桶×1 ← ラストの決め！
+            // 5：ウン・ウン・ウン・ウン・バシャ（5拍目）→ 1拍あけて → ウン・ウン・ウン・ウン・キラン！（11拍目）
             return {
-                len: 9.0,
+                len: 13.0,
                 counts: new Array(
-                    { beat: 1.0, hz: 392.00 },
-                    { beat: 2.0, hz: 440.00 },
-                    { beat: 3.0, hz: 493.88 },
-                    { beat: 4.0, hz: 523.25 }
+                    // お手本前の4拍（1, 2, 3, 4）
+                    { beat: 1.0,  hz: 392.00 },
+                    { beat: 2.0,  hz: 440.00 },
+                    { beat: 3.0,  hz: 493.88 },
+                    { beat: 4.0,  hz: 523.25 },
+                    // 5拍目で豆乳「バシャ！」、6拍目「ウン（1拍あけ）」のあと、7〜10拍目で自分の番の「1, 2, 3, 4」
+                    { beat: 7.0,  hz: 392.00 },
+                    { beat: 8.0,  hz: 440.00 },
+                    { beat: 9.0,  hz: 493.88 },
+                    { beat: 10.0, hz: 523.25 }
                 ),
                 tubs: new Array(
-                    { soyBeat: 5.0, kind: 'gold' }
+                    { soyBeat: 5.0, kind: 'gold', travel: GOLD_TRAVEL_BEATS }
                 )
             };
         }
     }
 
-    // 練習は「小さい桶×1」と「大きい桶×1」の2種類だけ！
+    // 練習は「小さい桶×1 [Space]」と「大きい桶×1 [N]」の2種類だけ！
     const PRACTICE_MODES = new Array(
         {
-            label: "1：小さい桶（豆乳バシャ → 1拍あけて [Space] 単押しポチャ！）",
+            label: "1：小さい桶（豆乳バシャ → 1拍あけて [Space] でポチャ！）",
             len: 5.5,
             counts: new Array(),
-            tubs: new Array({ soyBeat: 1.0, kind: 'small' })
+            tubs: new Array({ soyBeat: 1.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS })
         },
         {
-            label: "2：大きい桶（豆乳ザー → 1拍あけて [Space] 長押しボッチャン！）",
-            len: 6.0,
+            label: "2：大きい桶（豆乳トクトク → 1拍あけて [N] でボッチャン！）",
+            len: 5.5,
             counts: new Array(),
-            tubs: new Array({ soyBeat: 1.0, kind: 'large' })
+            tubs: new Array({ soyBeat: 1.0, kind: 'large', travel: NORMAL_TRAVEL_BEATS })
         }
     );
 
-    // 本番構成：全120拍（BPM128＋8拍前奏で約60秒＝ぴったり1分！）
+    // 本番構成：全122拍（BPM128＋8拍前奏で約60秒＝ぴったり1分！）
     const PROD_BLOCKS = new Array(
         makeTubPat(1),
         makeTubPat(1),
@@ -2725,7 +2707,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         makeTubPat(1),
         makeTubPat(3),
         makeTubPat(4),
-        makeTubPat(5)   // ラストの決め：ウン・ウン・ウン・ウン・金桶×1（キラン！）
+        makeTubPat(5)   // ラストの決め：1拍後さらに4拍あけて金桶キラン！
     );
 
     const WA_BASS = new Array(
@@ -2765,14 +2747,11 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
     let allTubs = new Array();
     let sparkles = new Array();
 
-    let soyPourTimer = 0;     // 左ノズルから豆乳が落ちるアニメーション
+    let soyPourTimer = 0;
     let soyPourBig = false;
-    let nigariPourTimer = 0;  // 右ノズルからにがりが落ちるアニメーション
+    let nigariPourTimer = 0;
+    let nigariPourBig = false;
     let nigariPourGold = false;
-
-    let isHoldingKey = false;
-    let holdStartSec = 0;
-    let activeHoldTub = null;
 
     let eyecatchDropPlayed = false;
     let eyecatchRipples = new Array();
@@ -2783,8 +2762,6 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         if (phase !== 'practice' && phase !== 'prod') return;
         if (!isPaused) {
             isPaused = true;
-            isHoldingKey = false;
-            activeHoldTub = null;
             pauseMenuIdx = 0;
             pauseStartTime = performance.now() / 1000;
             playPikon(587.33);
@@ -2838,14 +2815,14 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         });
         blk.tubs.forEach(t => {
             let sBeat = startBeat + t.soyBeat;
+            let tr = t.travel || NORMAL_TRAVEL_BEATS;
             allTubs.push({
                 kind: t.kind, // 'small' | 'large' | 'gold'
                 soyBeat: sBeat,
-                targetBeat: sBeat + TRAVEL_BEATS, // 1拍あけて（＝2拍後に）右ノズルへ到達
+                travelBeats: tr,
+                targetBeat: sBeat + tr,
                 soyPoured: false,
-                state: 'moving', // 'moving' | 'holding' | 'done' | 'missed'
-                isPerf: false,
-                demoReleaseBeat: 0
+                state: 'moving' // 'moving' | 'done' | 'missed'
             });
         });
     }
@@ -2854,8 +2831,6 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         pracSuccessCount = 0;
         pracBlockHadError = false;
         pracClearWait = false;
-        isHoldingKey = false;
-        activeHoldTub = null;
         allCounts = new Array();
         allTubs = new Array();
         lastBeatInt = -1;
@@ -2875,8 +2850,6 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
     function enterProductionWithFade() {
         isDemoMode = false;
         pracClearWait = false;
-        isHoldingKey = false;
-        activeHoldTub = null;
         phase = 'fade_to_prod';
         stateTimer = 0;
         allCounts = new Array();
@@ -2921,36 +2894,89 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         phase = 'fade_to_res';
         stateTimer = 0;
     }
-    function handleHoldRelease() {
-        if (!isHoldingKey) return;
-        let dur = (performance.now() / 1000) - holdStartSec;
-        isHoldingKey = false;
+    function triggerNigariAction(actionMode) {
+        // actionMode: 'normal' ([Space] / 左クリック) | 'large' ([N] / 右クリック)
+        if (phase !== 'practice' && phase !== 'prod') return;
+        if (phase === 'practice' && (isDemoMode || pracClearWait)) return;
 
-        if (!activeHoldTub) return;
-        let tb = activeHoldTub;
-        activeHoldTub = null;
+        let curBeat = ((performance.now() / 1000) - modeStartTime) / BEAT_SEC;
+        nigariPourTimer = (actionMode === 'large') ? 0.28 : 0.18;
+        nigariPourBig = (actionMode === 'large');
 
-        if (tb.state === 'holding') {
-            if (dur >= HOLD_MIN_SEC) {
-                tb.state = 'done';
-                nigariPourTimer = 0.25;
-                nigariPourGold = false;
-                playTone('nigari_bocchan');
-                addSparkles(640, 325, "#81d4fa", 14);
-                if (phase === 'prod') {
-                    totalNotesCount++;
-                    successNotesCount++;
-                    if (tb.isPerf) { perfectNotesCount++; pcBounce = 1.0; }
+        let best = null, minDiff = 999;
+        allTubs.forEach(tb => {
+            if (tb.state === 'moving') {
+                let d = Math.abs(curBeat - tb.targetBeat);
+                if (d < minDiff) { minDiff = d; best = tb; }
+            }
+        });
+
+        if (best && minDiff <= 0.36) {
+            let isPerf = (minDiff <= 0.15);
+            if (actionMode === 'large') {
+                // [N]キー大量投入：大きい桶なら大成功！
+                if (best.kind === 'large') {
+                    best.state = 'done';
+                    nigariPourGold = false;
+                    playTone('nigari_bocchan');
+                    addSparkles(640, 325, "#81d4fa", isPerf ? 16 : 10);
+                    if (phase === 'prod') {
+                        totalNotesCount++;
+                        successNotesCount++;
+                        if (isPerf) { perfectNotesCount++; pcBounce = 1.0; }
+                    }
+                } else {
+                    // 小さい桶や金桶に大量投入してしまった（ミス）
+                    best.state = 'missed';
+                    nigariPourGold = false;
+                    playTone('miss');
+                    if (phase === 'prod') {
+                        totalNotesCount++;
+                        if (best.kind === 'gold') goldMissed = true;
+                    } else {
+                        pracSuccessCount = 0;
+                        pracBlockHadError = true;
+                    }
                 }
             } else {
-                tb.state = 'missed';
-                playTone('miss');
-                if (phase === 'prod') {
-                    totalNotesCount++;
+                // [Space]キー通常投入：小さい桶 or 金色の桶なら成功！
+                if (best.kind === 'small' || best.kind === 'gold') {
+                    best.state = 'done';
+                    if (best.kind === 'gold') {
+                        nigariPourGold = true;
+                        playTone('nigari_kiran');
+                        addSparkles(640, 325, "#ffd54f", 22);
+                    } else {
+                        nigariPourGold = false;
+                        playTone('nigari_pocha');
+                        addSparkles(640, 330, "#4fc3f7", isPerf ? 12 : 7);
+                    }
+                    if (phase === 'prod') {
+                        totalNotesCount++;
+                        successNotesCount++;
+                        if (isPerf) { perfectNotesCount++; pcBounce = 1.0; }
+                    }
                 } else {
-                    pracSuccessCount = 0;
-                    pracBlockHadError = true;
+                    // 大きい桶に通常投入してしまった（量不足でミス）
+                    best.state = 'missed';
+                    nigariPourGold = false;
+                    playTone('miss');
+                    if (phase === 'prod') {
+                        totalNotesCount++;
+                    } else {
+                        pracSuccessCount = 0;
+                        pracBlockHadError = true;
+                    }
                 }
+            }
+        } else {
+            nigariPourGold = false;
+            playTone('miss');
+            if (phase === 'prod') {
+                emptyMissCount++;
+            } else if (phase === 'practice') {
+                pracSuccessCount = 0;
+                pracBlockHadError = true;
             }
         }
     }
@@ -2966,10 +2992,10 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             pracBlockHadError = false;
             pracClearWait = false;
             isDemoMode = false;
-            isHoldingKey = false;
-            activeHoldTub = null;
             soyPourTimer = 0;
             nigariPourTimer = 0;
+            nigariPourBig = false;
+            nigariPourGold = false;
             eyecatchDropPlayed = false;
             eyecatchRipples = new Array();
             pcOn = false;
@@ -3003,28 +3029,24 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                             ev.preventDefault();
                             executePauseAction(pauseMenuIdx);
                         }
+                        return;
                     }
-                };
-                window._rizumu13Release = function() {
-                    if (isHoldingKey) {
-                        handleHoldRelease();
+                    if (ev.code === 'KeyN' || ev.key === 'n' || ev.key === 'N') {
+                        if (phase === 'practice' || phase === 'prod') {
+                            ev.preventDefault();
+                            triggerNigariAction('large');
+                        }
                     }
                 };
                 window.addEventListener('keydown', window._rizumu13KeyDown);
-                window.addEventListener('keyup', window._rizumu13Release);
-                window.addEventListener('pointerup', window._rizumu13Release);
             }
         },
         stop() {
             phase = 'stopped';
             isPaused = false;
-            isHoldingKey = false;
             if (window._rizumu13KeyDown) {
                 window.removeEventListener('keydown', window._rizumu13KeyDown);
-                window.removeEventListener('keyup', window._rizumu13Release);
-                window.removeEventListener('pointerup', window._rizumu13Release);
                 window._rizumu13KeyDown = null;
-                window._rizumu13Release = null;
             }
         },
         onInput(kind, e) {
@@ -3095,62 +3117,11 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             }
 
             if (phase !== 'practice' && phase !== 'prod') return;
-            if (phase === 'practice' && (isDemoMode || pracClearWait)) return;
 
-            let nowSec = performance.now() / 1000;
-            let curBeat = (nowSec - modeStartTime) / BEAT_SEC;
-            nigariPourTimer = 0.20;
-
-            let best = null, minDiff = 999;
-            allTubs.forEach(tb => {
-                if (tb.state === 'moving') {
-                    let d = Math.abs(curBeat - tb.targetBeat);
-                    if (d < minDiff) { minDiff = d; best = tb; }
-                }
-            });
-
-            if (best && minDiff <= 0.36) {
-                let isPerf = (minDiff <= 0.15);
-                if (best.kind === 'large') {
-                    // 大きい桶：長押し開始
-                    best.state = 'holding';
-                    best.isPerf = isPerf;
-                    isHoldingKey = true;
-                    holdStartSec = nowSec;
-                    activeHoldTub = best;
-                    nigariPourGold = false;
-                    playTone('nigari_hold_start');
-                } else if (best.kind === 'gold') {
-                    // 金色の桶：決め打ち（キラン！）
-                    best.state = 'done';
-                    nigariPourGold = true;
-                    playTone('nigari_kiran');
-                    addSparkles(640, 325, "#ffd54f", 20);
-                    if (phase === 'prod') {
-                        totalNotesCount++;
-                        successNotesCount++;
-                        if (isPerf) { perfectNotesCount++; pcBounce = 1.0; }
-                    }
-                } else {
-                    // 小さい桶：単押し（ポチャ！）
-                    best.state = 'done';
-                    nigariPourGold = false;
-                    playTone('nigari_pocha');
-                    addSparkles(640, 330, "#4fc3f7", isPerf ? 12 : 7);
-                    if (phase === 'prod') {
-                        totalNotesCount++;
-                        successNotesCount++;
-                        if (isPerf) { perfectNotesCount++; pcBounce = 1.0; }
-                    }
-                }
+            if (kind === 'pointer' && e.button === 2) {
+                triggerNigariAction('large');
             } else {
-                playTone('miss');
-                if (phase === 'prod') {
-                    emptyMissCount++;
-                } else if (phase === 'practice') {
-                    pracSuccessCount = 0;
-                    pracBlockHadError = true;
-                }
+                triggerNigariAction('normal');
             }
         }
     };
@@ -3233,20 +3204,13 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             }
         }
 
-        // ラスト決め前の「1・2・3・4」掛け声カウント
+        // ラスト決め前の掛け声カウント（お手本前 1,2,3,4 と 自分の番前 1,2,3,4）
         allCounts.forEach(c => {
             if (!c.played && curBeat >= c.beat) {
                 c.played = true;
                 playTone('voice_count', c.hz);
             }
         });
-
-        // 大きい桶の長押し自動完了（0.45秒以上ホールドでボッチャン！）
-        if (isHoldingKey && activeHoldTub && activeHoldTub.state === 'holding') {
-            if ((nowSec - holdStartSec) >= 0.45) {
-                handleHoldRelease();
-            }
-        }
 
         for (let i = allTubs.length - 1; i >= 0; i--) {
             let tb = allTubs[i];
@@ -3255,9 +3219,9 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             if (!tb.soyPoured && curBeat >= tb.soyBeat) {
                 tb.soyPoured = true;
                 if (tb.kind === 'large') {
-                    soyPourTimer = 0.35;
+                    soyPourTimer = 0.30;
                     soyPourBig = true;
-                    playTone('soy_zaa');
+                    playTone('soy_large_pour');
                 } else {
                     soyPourTimer = 0.16;
                     soyPourBig = false;
@@ -3267,25 +3231,20 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
 
             // お手本モードの自動実演（右ノズル x=640 でにがり投入）
             if (phase === 'practice' && isDemoMode && tb.state === 'moving' && curBeat >= tb.targetBeat) {
+                tb.state = 'done';
                 if (tb.kind === 'large') {
-                    tb.state = 'holding';
-                    tb.demoReleaseBeat = tb.targetBeat + 0.7;
-                    nigariPourTimer = 0.35;
+                    nigariPourTimer = 0.28;
+                    nigariPourBig = true;
                     nigariPourGold = false;
-                    playTone('nigari_hold_start');
+                    playTone('nigari_bocchan');
+                    addSparkles(640, 325, "#81d4fa", 14);
                 } else {
-                    tb.state = 'done';
-                    nigariPourTimer = 0.20;
+                    nigariPourTimer = 0.18;
+                    nigariPourBig = false;
                     nigariPourGold = false;
                     playTone('nigari_pocha');
                     addSparkles(640, 330, "#4fc3f7", 12);
                 }
-            }
-            if (phase === 'practice' && isDemoMode && tb.state === 'holding' && curBeat >= tb.demoReleaseBeat) {
-                tb.state = 'done';
-                nigariPourTimer = 0.25;
-                playTone('nigari_bocchan');
-                addSparkles(640, 325, "#81d4fa", 14);
             }
 
             // 見逃しミス判定
@@ -3301,7 +3260,8 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             }
 
             // 画面右端を抜けたら削除
-            let tubX = 300 + (curBeat - tb.soyBeat) * 170;
+            let speed = 340 / tb.travelBeats;
+            let tubX = 300 + (curBeat - tb.soyBeat) * speed;
             if (tubX > 1060) {
                 allTubs.splice(i, 1);
             }
@@ -3356,9 +3316,8 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         ctx.save();
         ctx.translate(x, y);
 
-        // 桶のサイズ設定（小さい桶＝コンパクト、大きい桶＝一回り大きく、金桶＝黄金色）
-        let w = (kind === 'large') ? 56 : 42;
-        let h = (kind === 'large') ? 48 : 38;
+        let w = (kind === 'large') ? 54 : 40;
+        let h = (kind === 'large') ? 46 : 36;
 
         if (kind === 'gold') {
             ctx.shadowColor = "#ffd54f";
@@ -3371,7 +3330,6 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         }
         ctx.lineWidth = 3;
 
-        // 桶本体
         ctx.beginPath();
         ctx.moveTo(-w / 2, -h);
         ctx.lineTo(-w * 0.42, 0);
@@ -3382,7 +3340,6 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // タガ（横帯）
         ctx.strokeStyle = (kind === 'gold') ? "#fff59d" : "#8c6239";
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -3390,12 +3347,11 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         ctx.lineTo(w * 0.46, -h * 0.48);
         ctx.stroke();
 
-        // 桶の上面（豆乳・にがりが入ると色が変わる）
         ctx.fillStyle = hasNigari ? (kind === 'gold' ? "#fffde7" : "#e1f5fe")
                       : hasSoy ? "#ffffff"
                       : (kind === 'gold' ? "#ffe082" : "#8c6239");
         ctx.beginPath();
-        ctx.ellipse(0, -h, w / 2, 9, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -h, w / 2, 8.5, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
@@ -3405,21 +3361,18 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
     function drawNozzlePipe(ctx, x, topY, bottomY, isRightNigari, pourTimer, isBigStream, isGoldStream) {
         ctx.save();
 
-        // 液体の流れ（豆乳＝白、にがり＝水色、金決め＝金色）
         if (pourTimer > 0) {
             ctx.fillStyle = isGoldStream ? "#ffca28" : (isRightNigari ? "#4fc3f7" : "#ffffff");
-            let streamW = isBigStream ? 22 : 12;
+            let streamW = isBigStream ? 24 : 12;
             ctx.fillRect(x - streamW / 2, bottomY, streamW, 330 - bottomY);
         }
 
-        // ノズルパイプ本体（アスキーアートの |    | を再現）
         ctx.fillStyle = isRightNigari ? "#b0bec5" : "#d7ccc8";
         ctx.strokeStyle = "#4a4a4a";
         ctx.lineWidth = 3.5;
         ctx.fillRect(x - 20, topY, 40, bottomY - topY);
         ctx.strokeRect(x - 20, topY, 40, bottomY - topY);
 
-        // 先端のリング
         ctx.fillStyle = isRightNigari ? "#78909c" : "#a1887f";
         ctx.fillRect(x - 24, bottomY - 12, 48, 12);
         ctx.strokeRect(x - 24, bottomY - 12, 48, 12);
@@ -3432,22 +3385,20 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         ctx.fillStyle = "#c7bea6";
         ctx.fillRect(x, y, w, h);
 
-        // アスキーアートの ///////（見えない壁）を表す斜線パターン
         ctx.save();
         ctx.beginPath();
         ctx.rect(x, y, w, h);
         ctx.clip();
-        ctx.strokeStyle = "#b0a68c";
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#a89d82";
+        ctx.lineWidth = 3.5;
         for (let sx = x - h; sx < x + w + h; sx += 14) {
             ctx.beginPath();
             ctx.moveTo(sx, y + h);
-            ctx.lineTo(sx + h * 0.7, y);
+            ctx.lineTo(sx + h * 0.65, y);
             ctx.stroke();
         }
         ctx.restore();
 
-        // 上枠と左右の穴の縁取り
         ctx.strokeStyle = "#4a4a4a";
         ctx.lineWidth = 3.5;
         ctx.strokeRect(x, y, w, h);
@@ -3482,7 +3433,6 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                 ctx.fillRect(0, y, 940, 2);
             }
 
-            // 上部の『はたらくまんじゅう』風ロゴ「にがり打ち」
             ctx.save();
             ctx.translate(470, 128);
             ctx.scale(0.84, 0.84);
@@ -3523,14 +3473,12 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             });
             ctx.restore();
 
-            // 真ん中に豆乳の桶
             ctx.save();
             ctx.translate(470, 395);
             ctx.scale(2.1, 2.1);
             drawSmallTub(ctx, 0, 0, 'large', true, eyecatchDropPlayed);
             ctx.restore();
 
-            // 波紋エフェクト
             eyecatchRipples.forEach(rp => {
                 ctx.save();
                 ctx.globalAlpha = rp.alpha;
@@ -3542,7 +3490,6 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                 ctx.restore();
             });
 
-            // 最後に上からにがりの雫が「ポチャ！」と落ちてくる
             if (stateTimer >= 1.05 && stateTimer < 1.45) {
                 let fallT = (stateTimer - 1.05) / 0.40;
                 let dropY = 195 + fallT * fallT * 100;
@@ -3671,43 +3618,43 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
             ctx.restore();
             return;
         }
-        // ★ 3. プレイ画面（アスキーアート設計図の完全再現！）
-        // 背景壁
+        // ★ 3. プレイ画面（ノズル＆完全目隠し壁コンベア）
         ctx.fillStyle = "#ede6d3";
         ctx.fillRect(0, 0, 940, 350);
 
-        // 奥の隠れ豆腐パソコン（2本のノズルの真ん中に配置）
-        drawHiddenTofuPC(ctx, 470, 74, pcOn, pcBounce);
+        // 奥の隠れ豆腐パソコン
+        drawHiddenTofuPC(ctx, 470, 62, pcOn, pcBounce);
 
         // 上部の2本のノズル（左 x=300：豆乳ノズル、右 x=640：にがりノズル）
-        drawNozzlePipe(ctx, 300, 0, 185, false, soyPourTimer, soyPourBig, false);
-        drawNozzlePipe(ctx, 640, 0, 185, true,  nigariPourTimer, isHoldingKey, nigariPourGold);
+        drawNozzlePipe(ctx, 300, 0, 175, false, soyPourTimer, soyPourBig, false);
+        drawNozzlePipe(ctx, 640, 0, 175, true,  nigariPourTimer, nigariPourBig, nigariPourGold);
 
-        // ベルトコンベアの奥側ライン（y=340）
+        // ベルトコンベアの奥側ライン（y=346）
         ctx.fillStyle = "#8f8775";
-        ctx.fillRect(0, 340, 940, 14);
+        ctx.fillRect(0, 346, 940, 14);
 
         let effectiveNow = isPaused ? pauseStartTime : (performance.now() / 1000);
         let curBeat = (effectiveNow - modeStartTime) / BEAT_SEC;
 
-        // 左から流れてくる桶（目隠し壁より奥のレイヤーに描画することで、壁の後ろを通るとき隠れる！）
+        // 左から流れてくる桶（高さ36〜46、底y=346 → 頭頂はy=300〜310）
         allTubs.forEach(tb => {
-            let tubX = 300 + (curBeat - tb.soyBeat) * 170;
+            let speed = 340 / tb.travelBeats;
+            let tubX = 300 + (curBeat - tb.soyBeat) * speed;
             if (tubX >= -80 && tubX <= 1040) {
-                let hasNigari = (tb.state === 'done' || tb.state === 'holding');
-                drawSmallTub(ctx, tubX, 342, tb.kind, tb.soyPoured, hasNigari);
+                let hasNigari = (tb.state === 'done');
+                drawSmallTub(ctx, tubX, 346, tb.kind, tb.soyPoured, hasNigari);
             }
         });
 
-        // 手前の目隠し壁（/////// 部分）＋ 2つの穴（左穴：252〜348、右穴：592〜688）
-        // 左の壁（0 〜 252）
-        drawMaskedWall(ctx, -4, 302, 256, 138);
-        // 中央の壁（348 〜 592）← この後ろを通るとき桶が見えなくなる！
-        drawMaskedWall(ctx, 348, 302, 244, 138);
-        // 右の壁（688 〜 944）
-        drawMaskedWall(ctx, 688, 302, 256, 138);
+        // ★ 手前の目隠し壁（y=265〜440 の高さ175px！桶の頭y=300より35px高いため、壁の後ろを通るとき100%完全に隠れます！）
+        // 左の壁（-4 〜 258）
+        drawMaskedWall(ctx, -4, 265, 262, 175);
+        // 中央の壁（342 〜 598）← 左穴(258〜342)と右穴(598〜682)の間を完全に隠す！
+        drawMaskedWall(ctx, 342, 265, 256, 175);
+        // 右の壁（682 〜 944）
+        drawMaskedWall(ctx, 682, 265, 262, 175);
 
-        // 下部のコンベア土台ライン（アスキーアート一番下の2本線）
+        // 下部のコンベア土台ライン
         ctx.fillStyle = "#dfd8c5";
         ctx.fillRect(0, 440, 940, 80);
         ctx.strokeStyle = "#4a4a4a";
