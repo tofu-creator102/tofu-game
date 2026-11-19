@@ -925,11 +925,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
 
                 if (phase === 'res_step2' || phase === 'res_step3') {
                     ctx.textAlign = "left";
-                    if (isPerfectClear) {
-                        ctx.fillStyle = "#ffd54f"; ctx.font = "bold 17px sans-serif";
-                        ctx.fillText("しかもパーフェクト", 250, 185);
-                    }
-                    ctx.fillStyle = "#ffffff"; ctx.font = "bold 25px sans-serif";
+      ctx.fillStyle = "#ffffff"; ctx.font = "bold 25px sans-serif";
                     if (finalRankVal === 0) {
                         ctx.fillText("豆腐がもったいないです。", 250, 235);
                     } else if (finalRankVal === 1) {
@@ -968,11 +964,14 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                     ctx.fillStyle = mainCol; ctx.fillText(rankLabel, 0, 0);
                     ctx.restore();
 
-                    ctx.fillStyle = (finalRankVal === 0) ? "#546e7a" : "#ffb300";
-                    ctx.beginPath(); ctx.roundRect(-105, 18, 210, 28, 14); ctx.fill();
-                    ctx.fillStyle = (finalRankVal === 0) ? "#ffffff" : "#212121";
-                    ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
-                    ctx.fillText(subBadge, 0, 37);
+                    if (isPerfectClear) {
+                        ctx.fillStyle = "#ffb300";
+                        ctx.beginPath(); ctx.roundRect(-105, 18, 210, 28, 14); ctx.fill();
+                        ctx.fillStyle = "#212121";
+                        ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
+                        ctx.fillText("パーフェクト！", 0, 37);
+                    }
+
                     ctx.restore();
                 }
 
@@ -2219,11 +2218,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
 
                 if (phase === 'res_step2' || phase === 'res_step3') {
                     ctx.textAlign = "left";
-                    if (isPerfectClear) {
-                        ctx.fillStyle = "#ffd54f"; ctx.font = "bold 17px sans-serif";
-                        ctx.fillText("しかもパーフェクト", 250, 185);
-                    }
-                    ctx.fillStyle = "#ffffff"; ctx.font = "bold 25px sans-serif";
+               ctx.fillStyle = "#ffffff"; ctx.font = "bold 25px sans-serif";
                     if (finalRankVal === 0) {
                         ctx.fillText("良い豆と悪い豆が混ざってるよ。", 250, 235);
                         ctx.fillText("これじゃ豆腐が作れないね。", 250, 278);
@@ -2262,11 +2257,14 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                     ctx.fillStyle = mainCol; ctx.fillText(rankLabel, 0, 0);
                     ctx.restore();
 
-                    ctx.fillStyle = (finalRankVal === 0) ? "#546e7a" : "#ffb300";
-                    ctx.beginPath(); ctx.roundRect(-105, 18, 210, 28, 14); ctx.fill();
-                    ctx.fillStyle = (finalRankVal === 0) ? "#ffffff" : "#212121";
-                    ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
-                    ctx.fillText(subBadge, 0, 37);
+                    if (isPerfectClear) {
+                        ctx.fillStyle = "#ffb300";
+                        ctx.beginPath(); ctx.roundRect(-105, 18, 210, 28, 14); ctx.fill();
+                        ctx.fillStyle = "#212121";
+                        ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
+                        ctx.fillText("パーフェクト！", 0, 37);
+                    }
+
                     ctx.restore();
                 }
 
@@ -2604,95 +2602,91 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
     }
     const BPM = 128;
     const BEAT_SEC = 60 / BPM;
-    const NORMAL_TRAVEL_BEATS = 2.0; // 通常時：1拍あけて（＝2拍後に）右ノズルへ到達
-    const GOLD_TRAVEL_BEATS   = 6.0; // ラスト決め：1拍あけてからさらに4拍あけて（＝6拍後に）右ノズルへ到達！
 
     function makeTubPat(type) {
         if (type === 1) {
-            // 1：小さい桶×3（[Space] 単押し）
-            return {
-                len: 7.0,
-                counts: new Array(),
-                tubs: new Array(
-                    { soyBeat: 1.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
-                    { soyBeat: 2.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
-                    { soyBeat: 3.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS }
-                )
-            };
-        } else if (type === 2) {
-            // 2：小さい桶×2・ウン・小さい桶×2
+            // 1：（バシャ・バシャ・バシャ）→ [1拍あけ] → ポチャ・ポチャ・ポチャ！
             return {
                 len: 9.0,
                 counts: new Array(),
                 tubs: new Array(
-                    { soyBeat: 1.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
-                    { soyBeat: 2.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
-                    { soyBeat: 4.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
-                    { soyBeat: 5.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS }
+                    { soyBeat: 1.0, travel: 4.0, kind: 'small' }, // 1拍目豆乳 → 5拍目にがり
+                    { soyBeat: 2.0, travel: 4.0, kind: 'small' }, // 2拍目豆乳 → 6拍目にがり
+                    { soyBeat: 3.0, travel: 4.0, kind: 'small' }  // 3拍目豆乳 → 7拍目にがり（4拍目が1拍あけ！）
+                )
+            };
+        } else if (type === 2) {
+            // 2：（バシャ・バシャ・ウン・バシャ・バシャ）→ [1拍あけ] → ポチャ・ポチャ・ウン・ポチャ・ポチャ！
+            return {
+                len: 13.0,
+                counts: new Array(),
+                tubs: new Array(
+                    { soyBeat: 1.0, travel: 6.0, kind: 'small' }, // 1拍目豆乳 → 7拍目にがり
+                    { soyBeat: 2.0, travel: 6.0, kind: 'small' }, // 2拍目豆乳 → 8拍目にがり
+                    { soyBeat: 4.0, travel: 6.0, kind: 'small' }, // 4拍目豆乳 → 10拍目にがり
+                    { soyBeat: 5.0, travel: 6.0, kind: 'small' }  // 5拍目豆乳 → 11拍目にがり（6拍目が1拍あけ！）
                 )
             };
         } else if (type === 3) {
-            // 3：小さい桶×2・大きい桶×1（[Space]・[Space]・[N]）
+            // 3：（バシャ・バシャ・トクトク）→ [1拍あけ] → ポチャ[Space]・ポチャ[Space]・ボッチャン[N]！
             return {
-                len: 8.0,
+                len: 9.0,
                 counts: new Array(),
                 tubs: new Array(
-                    { soyBeat: 1.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
-                    { soyBeat: 2.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS },
-                    { soyBeat: 3.0, kind: 'large', travel: NORMAL_TRAVEL_BEATS }
+                    { soyBeat: 1.0, travel: 4.0, kind: 'small' }, // 1拍目豆乳 → 5拍目にがり
+                    { soyBeat: 2.0, travel: 4.0, kind: 'small' }, // 2拍目豆乳 → 6拍目にがり
+                    { soyBeat: 3.0, travel: 4.0, kind: 'large' }  // 3拍目豆乳 → 7拍目にがり（4拍目が1拍あけ！）
                 )
             };
         } else if (type === 4) {
-            // 4：大きい桶×3（[N]・[N]・[N]）
+            // 4：（トクトク・トクトク・トクトク）→ [1拍あけ] → ボッチャン[N]・ボッチャン[N]・ボッチャン[N]！
             return {
-                len: 8.0,
+                len: 9.0,
                 counts: new Array(),
                 tubs: new Array(
-                    { soyBeat: 1.0, kind: 'large', travel: NORMAL_TRAVEL_BEATS },
-                    { soyBeat: 2.0, kind: 'large', travel: NORMAL_TRAVEL_BEATS },
-                    { soyBeat: 3.0, kind: 'large', travel: NORMAL_TRAVEL_BEATS }
+                    { soyBeat: 1.0, travel: 4.0, kind: 'large' }, // 1拍目豆乳 → 5拍目にがり
+                    { soyBeat: 2.0, travel: 4.0, kind: 'large' }, // 2拍目豆乳 → 6拍目にがり
+                    { soyBeat: 3.0, travel: 4.0, kind: 'large' }  // 3拍目豆乳 → 7拍目にがり（4拍目が1拍あけ！）
                 )
             };
         } else {
-            // 5：ウン・ウン・ウン・ウン・バシャ（5拍目）→ 1拍あけて → ウン・ウン・ウン・ウン・キラン！（11拍目）
+            // 5：ウン・ウン・ウン・ウン・バシャ（5拍目）→ [1拍あけ] → ウン・ウン・ウン・ウン・キラン！（11拍目）
             return {
                 len: 13.0,
                 counts: new Array(
-                    // お手本前の4拍（1, 2, 3, 4）
                     { beat: 1.0,  hz: 392.00 },
                     { beat: 2.0,  hz: 440.00 },
                     { beat: 3.0,  hz: 493.88 },
                     { beat: 4.0,  hz: 523.25 },
-                    // 5拍目で豆乳「バシャ！」、6拍目「ウン（1拍あけ）」のあと、7〜10拍目で自分の番の「1, 2, 3, 4」
                     { beat: 7.0,  hz: 392.00 },
                     { beat: 8.0,  hz: 440.00 },
                     { beat: 9.0,  hz: 493.88 },
                     { beat: 10.0, hz: 523.25 }
                 ),
                 tubs: new Array(
-                    { soyBeat: 5.0, kind: 'gold', travel: GOLD_TRAVEL_BEATS }
+                    { soyBeat: 5.0, travel: 6.0, kind: 'gold' }
                 )
             };
         }
     }
 
-    // 練習は「小さい桶×1 [Space]」と「大きい桶×1 [N]」の2種類だけ！
+    // 練習は「小さい桶×1」と「大きい桶×1」の2種類だけ
     const PRACTICE_MODES = new Array(
         {
             label: "1：小さい桶（豆乳バシャ → 1拍あけて [Space] でポチャ！）",
             len: 5.5,
             counts: new Array(),
-            tubs: new Array({ soyBeat: 1.0, kind: 'small', travel: NORMAL_TRAVEL_BEATS })
+            tubs: new Array({ soyBeat: 1.0, travel: 2.0, kind: 'small' })
         },
         {
             label: "2：大きい桶（豆乳トクトク → 1拍あけて [N] でボッチャン！）",
             len: 5.5,
             counts: new Array(),
-            tubs: new Array({ soyBeat: 1.0, kind: 'large', travel: NORMAL_TRAVEL_BEATS })
+            tubs: new Array({ soyBeat: 1.0, travel: 2.0, kind: 'large' })
         }
     );
 
-    // 本番構成：全122拍（BPM128＋8拍前奏で約60秒＝ぴったり1分！）
+    // 本番構成：全138拍（BPM128＋8拍前奏で約68秒＝テンポ抜群の1分ちょい！）
     const PROD_BLOCKS = new Array(
         makeTubPat(1),
         makeTubPat(1),
@@ -2707,8 +2701,9 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
         makeTubPat(1),
         makeTubPat(3),
         makeTubPat(4),
-        makeTubPat(5)   // ラストの決め：1拍後さらに4拍あけて金桶キラン！
+        makeTubPat(5)
     );
+
 
     const WA_BASS = new Array(
         146.83, 146.83, 174.61, 196.00,
@@ -3258,11 +3253,14 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                     pracBlockHadError = true;
                 }
             }
-
-            // 画面右端を抜けたら削除
+            let rawBeats = curBeat - tb.soyBeat;
+            let whole = Math.floor(rawBeats);
+            let frac = rawBeats - whole;
+            let stepBeats = whole + Math.min(1, frac * 4.5);
             let speed = 340 / tb.travelBeats;
-            let tubX = 300 + (curBeat - tb.soyBeat) * speed;
-            if (tubX > 1060) {
+            let tubX = 300 + stepBeats * speed;
+
+        if (tubX > 1060) {
                 allTubs.splice(i, 1);
             }
         }
@@ -3535,11 +3533,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
 
                 if (phase === 'res_step2' || phase === 'res_step3') {
                     ctx.textAlign = "left";
-                    if (isPerfectClear) {
-                        ctx.fillStyle = "#ffd54f"; ctx.font = "bold 17px sans-serif";
-                        ctx.fillText("しかもパーフェクト", 250, 185);
-                    }
-                    ctx.fillStyle = "#ffffff"; ctx.font = "bold 25px sans-serif";
+                   ctx.fillStyle = "#ffffff"; ctx.font = "bold 25px sans-serif";
                     if (finalRankVal === 0) {
                         ctx.fillText("見えない区間のリズムがズレていたな。", 250, 235);
                         ctx.fillText("豆乳の音をよく聴いてみよう。", 250, 278);
@@ -3578,11 +3572,14 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                     ctx.fillStyle = mainCol; ctx.fillText(rankLabel, 0, 0);
                     ctx.restore();
 
-                    ctx.fillStyle = (finalRankVal === 0) ? "#546e7a" : "#ffb300";
-                    ctx.beginPath(); ctx.roundRect(-105, 18, 210, 28, 14); ctx.fill();
-                    ctx.fillStyle = (finalRankVal === 0) ? "#ffffff" : "#212121";
-                    ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
-                    ctx.fillText(subBadge, 0, 37);
+                    if (isPerfectClear) {
+                        ctx.fillStyle = "#ffb300";
+                        ctx.beginPath(); ctx.roundRect(-105, 18, 210, 28, 14); ctx.fill();
+                        ctx.fillStyle = "#212121";
+                        ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
+                        ctx.fillText("パーフェクト！", 0, 37);
+                    }
+
                     ctx.restore();
                 }
 
@@ -3638,8 +3635,13 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
 
         // 左から流れてくる桶（高さ36〜46、底y=346 → 頭頂はy=300〜310）
         allTubs.forEach(tb => {
+            let rawBeats = curBeat - tb.soyBeat;
+            let whole = Math.floor(rawBeats);
+            let frac = rawBeats - whole;
+            let stepBeats = whole + Math.min(1, frac * 4.5);
             let speed = 340 / tb.travelBeats;
-            let tubX = 300 + (curBeat - tb.soyBeat) * speed;
+            let tubX = 300 + stepBeats * speed;
+
             if (tubX >= -80 && tubX <= 1040) {
                 let hasNigari = (tb.state === 'done');
                 drawSmallTub(ctx, tubX, 346, tb.kind, tb.soyPoured, hasNigari);
@@ -4719,11 +4721,7 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
 
                 if (phase === 'res_step2' || phase === 'res_step3') {
                     ctx.textAlign = "left";
-                    if (isPerfectClear) {
-                        ctx.fillStyle = "#ffd54f"; ctx.font = "bold 17px sans-serif";
-                        ctx.fillText("しかもパーフェクト", 250, 185);
-                    }
-                    ctx.fillStyle = "#ffffff"; ctx.font = "bold 25px sans-serif";
+                  ctx.fillStyle = "#ffffff"; ctx.font = "bold 25px sans-serif";
                     if (finalRankVal === 0) {
                         ctx.fillText("まだ水っぽさが残っているな。", 250, 235);
                         ctx.fillText("ビートに乗ってしっかり絞ろう。", 250, 278);
@@ -4762,11 +4760,14 @@ window.RIZUMU_GAMES = window.RIZUMU_GAMES || {};
                     ctx.fillStyle = mainCol; ctx.fillText(rankLabel, 0, 0);
                     ctx.restore();
 
-                    ctx.fillStyle = (finalRankVal === 0) ? "#546e7a" : "#ffb300";
-                    ctx.beginPath(); ctx.roundRect(-105, 18, 210, 28, 14); ctx.fill();
-                    ctx.fillStyle = (finalRankVal === 0) ? "#ffffff" : "#212121";
-                    ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
-                    ctx.fillText(subBadge, 0, 37);
+                    if (isPerfectClear) {
+                        ctx.fillStyle = "#ffb300";
+                        ctx.beginPath(); ctx.roundRect(-105, 18, 210, 28, 14); ctx.fill();
+                        ctx.fillStyle = "#212121";
+                        ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
+                        ctx.fillText("パーフェクト！", 0, 37);
+                    }
+
                     ctx.restore();
                 }
 
